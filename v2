@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fisherman's Casino</title>
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --primary: #4caf50;
+            --primary-hover: #45a049;
+            --danger: #f44336;
+            --common: #9e9e9e;
+            --uncommon: #4caf50;
+            --rare: #2196f3;
+            --epic: #9c27b0;
+            --legendary: #ff9800;
+            --heroic: #e91e63;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-color); overflow-x: hidden; }
+
+        /* Navbar & Sidebar */
+        #navbar { background: #000; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #333; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
+        .hamburger { font-size: 24px; cursor: pointer; user-select: none; }
+        .stats { display: flex; flex-wrap: wrap; align-items: center; gap: 15px; }
+        .stats span { font-weight: bold; background: #222; padding: 5px 10px; border-radius: 5px; }
+        
+        #sidebar { position: fixed; top: 0; left: -250px; width: 250px; height: 100%; background: #111; border-right: 2px solid #333; transition: 0.3s; z-index: 1000; padding-top: 60px; }
+        #sidebar.open { left: 0; }
+        #sidebar a { display: block; padding: 15px 20px; color: white; text-decoration: none; font-size: 18px; border-bottom: 1px solid #222; cursor: pointer; }
+        #sidebar a:hover { background: #333; }
+        .close-btn { position: absolute; top: 10px; right: 20px; font-size: 30px; cursor: pointer; }
+
+        /* Main Layout */
+        .view { display: none; padding: 20px; max-width: 1000px; margin: auto; }
+        .view.active { display: block; }
+        h2 { margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 10px; font-size: 1.5rem; }
+
+        /* Buttons & Inputs */
+        button { background: var(--primary); color: white; border: none; padding: 8px 16px; cursor: pointer; border-radius: 4px; font-weight: bold; transition: 0.2s; }
+        button:hover { background: var(--primary-hover); }
+        button:disabled { background: #555; cursor: not-allowed; }
+        button.danger { background: var(--danger); }
+        select, input { padding: 8px; border-radius: 4px; border: 1px solid #555; background: #222; color: white; margin-bottom: 10px; width: 100%; max-width: 200px; }
+
+        /* Rarity Borders */
+        .rarity-common { border: 2px solid var(--common) !important; box-shadow: 0 0 5px var(--common); }
+        .rarity-uncommon { border: 2px solid var(--uncommon) !important; box-shadow: 0 0 5px var(--uncommon); }
+        .rarity-rare { border: 2px solid var(--rare) !important; box-shadow: 0 0 5px var(--rare); }
+        .rarity-epic { border: 2px solid var(--epic) !important; box-shadow: 0 0 5px var(--epic); }
+        .rarity-legendary { border: 2px solid var(--legendary) !important; box-shadow: 0 0 5px var(--legendary); }
+        .rarity-heroic { border: 2px solid var(--heroic) !important; box-shadow: 0 0 10px var(--heroic); }
+
+        /* Fishing View */
+        #pond { width: 100%; max-width: 600px; height: 350px; background: radial-gradient(circle, #0f4c75, #3282b8); border-radius: 10px; position: relative; overflow: hidden; margin: 20px auto; border: 4px solid #1b262c; touch-action: manipulation; }
+        #bobber { width: 20px; height: 20px; background: red; border-radius: 50%; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); transition: 0.1s; border: 2px solid white; }
+        .trail-particle { position: absolute; width: 10px; height: 10px; background: rgba(255,255,255,0.7); border-radius: 50%; box-shadow: 0 0 10px white; }
+        .splash { transform: translate(-50%, -50%) scale(2); background: yellow !important; }
+        #fishing-controls { text-align: center; }
+        #fish-log { text-align: center; margin-top: 10px; font-size: 18px; font-weight: bold; min-height: 24px; color: #ffeb3b; }
+
+        /* Inventory View */
+        .inv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .inv-item { background: var(--panel-bg); padding: 10px; text-align: center; border-radius: 6px; position: relative; display: flex; flex-direction: column; justify-content: space-between; }
+        .inv-item .emoji { font-size: 40px; margin-bottom: 5px; }
+        .inv-item .qty { position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.8); padding: 2px 6px; border-radius: 10px; font-size: 12px; font-weight: bold;}
+        .inv-item button { margin-top: 5px; width: 100%; font-size: 12px; }
+        .inv-actions { margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap; background: #222; padding: 15px; border-radius: 5px; }
+
+        /* Shop View */
+        #shop-timer { color: var(--legendary); font-weight: bold; font-size: 20px; }
+        .shop-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
+        .shop-slot { background: var(--panel-bg); padding: 15px; border-radius: 6px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; }
+        .shop-slot .price { font-size: 18px; font-weight: bold; margin: 10px 0; color: #4caf50; }
+        .shop-slot .limit { font-size: 12px; color: #aaa; margin-bottom: 10px; }
+        .shop-slot-actions { display: flex; gap: 5px; justify-content: center; flex-wrap: wrap; }
+
+        /* Blackjack View */
+        #bj-table { background: #076324; border-radius: 20px; padding: 20px; min-height: 400px; border: 8px solid #4e342e; position: relative; text-align: center; margin-top: 15px; }
+        .cards-area { min-height: 110px; margin: 15px 0; display: flex; justify-content: center; gap: -20px; flex-wrap: wrap; }
+        .card { width: 60px; height: 90px; background: white; color: black; border-radius: 5px; font-size: 20px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 2px 2px 5px rgba(0,0,0,0.5); border: 1px solid #ccc; margin: 5px; }
+        .card.red { color: #d32f2f; }
+        .card.hidden { background: #b71c1c; background-image: repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(0,0,0,0.2) 10px, rgba(0,0,0,0.2) 20px); color: transparent; }
+        #bj-controls { background: var(--panel-bg); padding: 15px; border-radius: 10px; margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+        .hand-score { background: rgba(0,0,0,0.6); padding: 5px 10px; border-radius: 10px; display: inline-block; margin-bottom: 5px; font-size: 14px; }
+        .split-hands { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .active-hand { outline: 3px solid yellow; outline-offset: 5px; border-radius: 5px; }
+        .bj-bet-area { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: center; background: #222; padding: 15px; border-radius: 10px; }
+
+        /* Modal */
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 20px; }
+        .modal { background: var(--panel-bg); padding: 20px; border-radius: 10px; width: 100%; max-width: 400px; text-align: center; }
+        .modal h3 { margin-bottom: 15px; }
+        .modal-buttons { display: flex; justify-content: center; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+
+        /* Responsive UI */
+        @media (max-width: 600px) {
+            #navbar { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .stats { justify-content: flex-start; gap: 8px; font-size: 13px; }
+            #pond { height: 280px; }
+            .inv-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); }
+            .inv-item .emoji { font-size: 30px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <div id="navbar">
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div class="hamburger" onclick="toggleMenu()">☰</div>
+            <strong style="font-size: 18px; color: var(--primary);">Fisherman's Casino</strong>
+        </div>
+        <div class="stats">
+            <span id="ui-money">💰 ₹0</span>
+            <span id="ui-gems">💎 0</span>
+            <span id="ui-level" title="Play Blackjack or Fish to level up!">Lvl 1 (0/100 XP)</span>
+            <span id="ui-rod">🎣 Rod Lvl 1</span>
+            <span id="ui-inv-count">🎒 0/100</span>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <div class="close-btn" onclick="toggleMenu()">×</div>
+        <a onclick="switchView('fishing')">🎣 Fishing</a>
+        <a onclick="switchView('inventory')">🎒 Inventory</a>
+        <a onclick="switchView('shop')">🏪 Market</a>
+        <a onclick="switchView('blackjack')">🃏 Blackjack</a>
+        <a onclick="resetSave()" style="color: var(--danger); margin-top: 50px; font-size: 14px;">⚠️ Reset Progress</a>
+    </div>
+
+    <!-- Fishing View -->
+    <div id="view-fishing" class="view active">
+        <h2>Fishing Pond</h2>
+        <div id="pond" onclick="touchPond()">
+            <div id="bobber"></div>
+        </div>
+        <div id="fishing-controls">
+            <button id="btn-cast" onclick="castRod()" style="font-size: 20px; padding: 12px 30px; border-radius: 30px;">Cast Rod</button>
+            <button id="btn-pull" onclick="pullRod()" style="font-size: 20px; padding: 12px 30px; border-radius: 30px; display: none; background: var(--legendary);">PULL!</button>
+            <div id="fish-log">Tap 'Cast Rod' to start.</div>
+        </div>
+    </div>
+
+    <!-- Inventory View -->
+    <div id="view-inventory" class="view">
+        <h2>Inventory</h2>
+        <div class="inv-actions">
+            <button onclick="upgradeInvCash()">+10 Slots (₹1M)</button>
+            <button onclick="upgradeInvGems()">+10 Slots (3 💎)</button>
+            <button onclick="cashGem()">Cash 1 💎 to ₹250k</button>
+            <button onclick="upgradeShopGems()">+1 Shop Slot (10 💎)</button>
+        </div>
+        <div id="inv-grid" class="inv-grid"></div>
+    </div>
+
+    <!-- Shop View -->
+    <div id="view-shop" class="view">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;">
+            <h2>Market Traders</h2>
+            <div id="shop-timer">05:00</div>
+        </div>
+        <p style="color:#aaa; font-size:14px; margin-bottom: 15px;">Buy/Sell items. Prices and stocks refresh every 5 minutes!</p>
+        <div id="shop-grid" class="shop-grid"></div>
+    </div>
+
+    <!-- Blackjack View -->
+    <div id="view-blackjack" class="view">
+        <h2>High Stakes Blackjack</h2>
+        <div class="bj-bet-area">
+            <select id="bj-mode" onchange="updateBjLimits()">
+                <option value="1">Mode 1: ₹10 - ₹1k</option>
+                <option value="2">Mode 2: ₹1k - ₹10k</option>
+                <option value="3">Mode 3: ₹10k - ₹100k</option>
+                <option value="4">Mode 4: ₹100k - ₹1M</option>
+                <option value="5">Mode 5: ₹1M - ₹10M</option>
+            </select>
+            <input type="number" id="bj-bet" placeholder="Bet amount">
+            <button onclick="startBjRound()" id="btn-bj-deal">Deal</button>
+        </div>
+        <div id="bj-msg" style="color: var(--legendary); font-weight: bold; text-align: center; margin-top: 10px; min-height: 20px;"></div>
+        
+        <div id="bj-table">
+            <div id="dealer-area">
+                <div class="hand-score" id="dealer-score">Dealer: ?</div>
+                <div class="cards-area" id="dealer-cards"></div>
+            </div>
+            <div id="player-area" class="split-hands">
+                <!-- Hands will be injected here -->
+            </div>
+        </div>
+        
+        <div id="bj-controls" style="display: none;">
+            <button onclick="bjHit()">Hit</button>
+            <button onclick="bjStand()">Stand</button>
+            <button onclick="bjDouble()" id="btn-bj-double">Double Down</button>
+            <button onclick="bjSplit()" id="btn-bj-split">Split</button>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay">
+        <div class="modal" id="modal-content"></div>
+    </div>
+
+<script>
+    // --- DATABASE & CONFIG --- //
+    const ITEMS = {
+        'sardine': { name: 'Sardine', type: 'fish', rarity: 'common', basePrice: 12, stackable: true, emoji: '🐟', exp: 10 },
+        'salmon': { name: 'Salmon', type: 'fish', rarity: 'uncommon', basePrice: 35, stackable: true, emoji: '🐠', exp: 25 },
+        'tuna': { name: 'Tuna', type: 'fish', rarity: 'rare', basePrice: 65, stackable: true, emoji: '🐡', exp: 50 },
+        
+        'bronze_statue': { name: 'Bronze Statue', type: 'treasure', rarity: 'rare', basePrice: 500, stackable: false, emoji: '🗽', exp: 50 },
+        'silver_coin': { name: 'Silver Coin', type: 'treasure', rarity: 'rare', basePrice: 750, stackable: false, emoji: '🪙', exp: 50 },
+        'old_boot': { name: 'Old Boot', type: 'treasure', rarity: 'rare', basePrice: 100, stackable: false, emoji: '👢', exp: 50 },
+        
+        'gold_ring': { name: 'Gold Ring', type: 'treasure', rarity: 'epic', basePrice: 2000, stackable: false, emoji: '💍', exp: 100 },
+        'emerald_pendant': { name: 'Emerald Pendant', type: 'treasure', rarity: 'epic', basePrice: 2500, stackable: false, emoji: '📿', exp: 100 },
+        'bj_book_1': { name: 'Book of Insurance', type: 'book', rarity: 'epic', basePrice: 5000, stackable: false, emoji: '📘', exp: 100, desc: 'Perk: Free BJ Insurance' },
+        
+        'diamond_goblet': { name: 'Diamond Goblet', type: 'treasure', rarity: 'legendary', basePrice: 10000, stackable: false, emoji: '🍷', exp: 250 },
+        'pirate_crown': { name: 'Pirate Crown', type: 'treasure', rarity: 'legendary', basePrice: 15000, stackable: false, emoji: '👑', exp: 250 },
+        'bj_book_2': { name: 'Book of Payouts', type: 'book', rarity: 'legendary', basePrice: 25000, stackable: false, emoji: '📕', exp: 250, desc: 'Perk: BJ pays 2:1' },
+        
+        'ancient_relic': { name: 'Ancient Relic', type: 'treasure', rarity: 'heroic', basePrice: 50000, stackable: false, emoji: '🏺', exp: 1000 },
+        'dragon_scale': { name: 'Dragon Scale', type: 'treasure', rarity: 'heroic', basePrice: 75000, stackable: false, emoji: '🐉', exp: 1000 },
+        'gem': { name: 'Gem', type: 'asset', rarity: 'heroic', basePrice: 250000, stackable: true, emoji: '💎', exp: 1000 },
+        
+        'rod_2': { name: 'Fiberglass Rod', type: 'rod', rarity: 'epic', basePrice: 50000, stackable: false, emoji: '🎣', desc: 'Efficiency: Better Rare odds' },
+        'rod_3': { name: 'Carbon Rod', type: 'rod', rarity: 'legendary', basePrice: 500000, stackable: false, emoji: '🎣', desc: 'Efficiency: Best Rare odds' }
+    };
+
+    // --- STATE --- //
+    let player = {
+        money: 500, gems: 0, exp: 0, level: 1, maxInv: 100, shopSlots: 6, inv: [], rodLevel: 1,
+        lastShopTime: Date.now(), shopInventory:[]
+    };
+
+    let fishingDeck =[];
+    let fishingState = 'idle'; // idle, waiting, biting
+    let fishingTimeout, biteTimeout;
+    
+    let shopTimeRemaining = 300; // 5 mins
+    let pendingCaughtItem = null;
+
+    // --- INIT & SAVE/LOAD --- //
+    window.onload = () => {
+        loadGame();
+        buildDeck();
+        
+        // Handle offline shop timer
+        let secondsPassed = Math.floor((Date.now() - player.lastShopTime) / 1000);
+        if (secondsPassed >= 300 || player.shopInventory.length === 0) {
+            generateShop();
+        } else {
+            shopTimeRemaining = 300 - secondsPassed;
+        }
+
+        setInterval(updateShopTimer, 1000);
+        updateUI();
+        updateBjLimits();
+    };
+
+    function saveGame() {
+        player.lastShopTime = Date.now() - ((300 - shopTimeRemaining) * 1000);
+        localStorage.setItem('fishermanCasinoSave', JSON.stringify(player));
+    }
+
+    function loadGame() {
+        let saved = localStorage.getItem('fishermanCasinoSave');
+        if (saved) {
+            try { player = { ...player, ...JSON.parse(saved) }; } 
+            catch(e) { console.error("Save file corrupted"); }
+        }
+    }
+
+    function resetSave() {
+        if(confirm("Are you sure you want to reset all progress? This cannot be undone!")) {
+            localStorage.removeItem('fishermanCasinoSave');
+            location.reload();
+        }
+    }
+
+    // --- UI NAVIGATION --- //
+    function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); }
+    function switchView(viewId) {
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+        document.getElementById(`view-${viewId}`).classList.add('active');
+        toggleMenu();
+        if(viewId === 'inventory') renderInventory();
+        if(viewId === 'shop') renderShop();
+    }
+
+    // --- UI UPDATER --- //
+    function updateUI() {
+        document.getElementById('ui-money').innerText = `💰 ₹${player.money.toLocaleString()}`;
+        document.getElementById('ui-gems').innerText = `💎 ${player.gems}`;
+        document.getElementById('ui-rod').innerText = `🎣 Rod Lvl ${player.rodLevel}`;
+        
+        // Infinite Level Calculation
+        player.level = Math.floor(Math.sqrt(player.exp / 100)) + 1;
+        let nextLevelExp = Math.pow(player.level, 2) * 100;
+        document.getElementById('ui-level').innerText = `Lvl ${player.level} (${player.exp}/${nextLevelExp} XP)`;
+        
+        let invSize = player.inv.length;
+        document.getElementById('ui-inv-count').innerText = `🎒 ${invSize}/${player.maxInv}`;
+
+        saveGame(); // Auto-save on any UI/State update
+    }
+
+    // --- INVENTORY LOGIC --- //
+    function addItem(id) {
+        const itemDef = ITEMS[id];
+        if (id === 'gem') {
+            player.gems++;
+            updateUI();
+            return true;
+        }
+
+        if (itemDef.stackable) {
+            let existing = player.inv.find(i => i.id === id);
+            if (existing) {
+                existing.qty++;
+                updateUI();
+                return true;
+            }
+        }
+
+        if (player.inv.length >= player.maxInv) {
+            pendingCaughtItem = id;
+            showFullInvModal(id);
+            return false;
+        }
+
+        player.inv.push({ id: id, qty: 1, uid: Math.random().toString(36).substr(2, 9) });
+        updateUI();
+        return true;
+    }
+
+    function removeItem(id, qty = 1, uid = null) {
+        if (uid) {
+            let idx = player.inv.findIndex(i => i.uid === uid);
+            if (idx > -1) player.inv.splice(idx, 1);
+        } else {
+            let existing = player.inv.find(i => i.id === id);
+            if (existing) {
+                existing.qty -= qty;
+                if (existing.qty <= 0) player.inv = player.inv.filter(i => i !== existing);
+            }
+        }
+        updateUI();
+        if(document.getElementById('view-inventory').classList.contains('active')) renderInventory();
+    }
+
+    function hasItem(id) { return player.inv.some(i => i.id === id); }
+    function getInvQty(id) {
+        let count = 0;
+        player.inv.forEach(i => { if(i.id === id) count += i.qty; });
+        return count;
+    }
+
+    function equipRod(id, uid, requiredLevel) {
+        if (player.rodLevel >= requiredLevel) {
+            alert("You already have this rod or a better one equipped!");
+            return;
+        }
+        player.rodLevel = requiredLevel;
+        removeItem(id, 1, uid);
+        buildDeck(); // Update odds
+        alert(`Equipped Fishing Rod Level ${requiredLevel}!`);
+        updateUI();
+    }
+
+    // Upgrades & Gems
+    function upgradeInvCash() {
+        if (player.money >= 1000000) { player.money -= 1000000; player.maxInv += 10; alert("Inventory expanded by 10!"); updateUI(); } 
+        else alert("Not enough cash! Need ₹1,000,000.");
+    }
+    function upgradeInvGems() {
+        if (player.gems >= 3) { player.gems -= 3; player.maxInv += 10; alert("Inventory expanded by 10!"); updateUI(); } 
+        else alert("Not enough gems! Need 3.");
+    }
+    function cashGem() {
+        if (player.gems >= 1) { player.gems -= 1; player.money += 250000; alert("Cashed 1 Gem for ₹250k!"); updateUI(); } 
+        else alert("No gems available!");
+    }
+    function upgradeShopGems() {
+        if (player.gems >= 10) { player.gems -= 10; player.shopSlots++; alert("Shop slots permanently increased by 1!"); generateShop(); updateUI(); } 
+        else alert("Not enough gems! Need 10.");
+    }
+
+    // Modal
+    function showModal(html) {
+        document.getElementById('modal-content').innerHTML = html;
+        document.getElementById('modal-overlay').style.display = 'flex';
+    }
+    function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+
+    function showFullInvModal(id) {
+        let item = ITEMS[id];
+        let quickSellPrice = Math.floor(item.basePrice * 0.7);
+        let html = `
+            <h3>Inventory Full!</h3>
+            <p>You caught a <strong>${item.name}</strong> ${item.emoji}</p>
+            <p>Your inventory is full. What do you want to do?</p>
+            <div class="modal-buttons">
+                <button onclick="handleInvFull('drop')">Drop It</button>
+                <button onclick="handleInvFull('sell', ${quickSellPrice})" style="background:var(--primary)">Quick Sell (₹${quickSellPrice})</button>
+            </div>
+        `;
+        showModal(html);
+    }
+
+    function handleInvFull(action, price) {
+        if (action === 'sell') { player.money += price; logFish(`Quick sold for ₹${price}`); updateUI(); } 
+        else { logFish(`Dropped item.`); }
+        pendingCaughtItem = null;
+        closeModal();
+    }
+
+    function quickSellFromInv(id, uid, qtyToSell) {
+        let item = ITEMS[id];
+        let price = Math.floor(item.basePrice * 0.7) * qtyToSell;
+        player.money += price;
+        removeItem(id, qtyToSell, uid);
+        alert(`Quick sold for ₹${price}`);
+    }
+
+    function renderInventory() {
+        const grid = document.getElementById('inv-grid');
+        grid.innerHTML = '';
+        if (player.inv.length === 0) grid.innerHTML = "<p style='color:#777;'>Inventory is empty.</p>";
+
+        player.inv.forEach(i => {
+            let itemDef = ITEMS[i.id];
+            let div = document.createElement('div');
+            div.className = `inv-item rarity-${itemDef.rarity}`;
+            
+            let actionHtml = '';
+            if (itemDef.type === 'rod') {
+                let rLvl = i.id === 'rod_2' ? 2 : 3;
+                if (player.rodLevel < rLvl) {
+                    actionHtml = `<button onclick="equipRod('${i.id}', '${i.uid}', ${rLvl})" style="background:var(--legendary); margin-bottom:5px;">Equip</button>`;
+                }
+            }
+
+            div.innerHTML = `
+                <div>
+                    <div class="emoji">${itemDef.emoji}</div>
+                    ${itemDef.stackable ? `<div class="qty">x${i.qty}</div>` : ''}
+                    <div style="font-weight:bold; font-size:14px;">${itemDef.name}</div>
+                    ${itemDef.desc ? `<div style="font-size:10px; color:#aaa; margin-top:3px;">${itemDef.desc}</div>` : ''}
+                </div>
+                <div style="margin-top: 10px;">
+                    ${actionHtml}
+                    <button onclick="quickSellFromInv('${i.id}', '${i.uid}', ${i.qty})">Quick Sell (-30%)</button>
+                </div>
+            `;
+            grid.appendChild(div);
+        });
+    }
+
+    // --- FISHING MECHANIC --- //
+    function buildDeck() {
+        fishingDeck =[];
+        let m = player.rodLevel === 1 ? 1 : (player.rodLevel === 2 ? 1.2 : 1.5);
+        
+        // Items and their weights (simulating continuous probability like a deck)
+        let adds = {
+            'sardine': 100, 'salmon': Math.floor(50*m), 'tuna': Math.floor(20*m),
+            'bronze_statue': Math.floor(5*m), 'silver_coin': Math.floor(5*m), 'old_boot': Math.floor(4*m),
+            'gold_ring': Math.floor(4*m), 'emerald_pendant': Math.floor(3*m), 'bj_book_1': Math.floor(2*m),
+            'diamond_goblet': Math.floor(3*m), 'pirate_crown': Math.floor(1*m), 'bj_book_2': Math.floor(1*m),
+            'ancient_relic': Math.floor(1*m), 'dragon_scale': Math.floor(1*m), 'gem': Math.floor(1*m),
+            'rod_2': Math.floor(2*m), 'rod_3': Math.floor(1*m) // Rods available as treasures
+        };
+
+        for (let [id, count] of Object.entries(adds)) {
+            if(count > 0) for(let i=0; i<count; i++) fishingDeck.push(id);
+        }
+        
+        // Shuffle
+        for (let i = fishingDeck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [fishingDeck[i], fishingDeck[j]] = [fishingDeck[j], fishingDeck[i]];
+        }
+    }
+
+    function drawFish() {
+        if (fishingDeck.length === 0) buildDeck();
+        return fishingDeck.pop();
+    }
+
+    function logFish(msg) { document.getElementById('fish-log').innerText = msg; }
+
+    function touchPond() {
+        // Allow tapping pond area to pull if waiting
+        if (fishingState === 'biting' || fishingState === 'waiting') pullRod();
+    }
+
+    function castRod() {
+        if (fishingState !== 'idle') return;
+        fishingState = 'waiting';
+        document.getElementById('btn-cast').style.display = 'none';
+        document.getElementById('btn-pull').style.display = 'inline-block';
+        logFish("Waiting for a bite...");
+
+        let waitTime = Math.random() * 3000 + 1500; // 1.5-4.5s
+        fishingTimeout = setTimeout(spawnTrail, waitTime);
+    }
+
+    function spawnTrail() {
+        if (fishingState !== 'waiting') return;
+        
+        let pond = document.getElementById('pond');
+        let particle = document.createElement('div');
+        particle.className = 'trail-particle';
+        
+        let angle = Math.random() * Math.PI * 2;
+        let radius = 250;
+        let pWidth = pond.clientWidth;
+        let pHeight = pond.clientHeight;
+        let startX = (pWidth/2) + Math.cos(angle)*radius;
+        let startY = (pHeight/2) + Math.sin(angle)*radius;
+        
+        particle.style.left = startX + 'px';
+        particle.style.top = startY + 'px';
+        pond.appendChild(particle);
+
+        particle.animate([
+            { left: startX+'px', top: startY+'px' },
+            { left: '50%', top: '50%' }
+        ], { duration: 1500, easing: 'ease-in' });
+
+        setTimeout(() => {
+            if (fishingState !== 'waiting') { particle.remove(); return; }
+            particle.remove();
+            triggerBite();
+        }, 1500);
+    }
+
+    function triggerBite() {
+        fishingState = 'biting';
+        let bobber = document.getElementById('bobber');
+        bobber.classList.add('splash');
+        logFish("BITE! PULL NOW!");
+
+        biteTimeout = setTimeout(() => {
+            if (fishingState === 'biting') {
+                fishingState = 'idle';
+                bobber.classList.remove('splash');
+                resetFishBtns();
+                logFish("The fish got away...");
+            }
+        }, 800); // Reaction time window
+    }
+
+    function pullRod() {
+        if (fishingState === 'waiting') {
+            clearTimeout(fishingTimeout);
+            fishingState = 'idle';
+            resetFishBtns();
+            logFish("Pulled too early!");
+        } else if (fishingState === 'biting') {
+            clearTimeout(biteTimeout);
+            fishingState = 'idle';
+            document.getElementById('bobber').classList.remove('splash');
+            resetFishBtns();
+            catchFish();
+        }
+    }
+
+    function resetFishBtns() {
+        document.getElementById('btn-cast').style.display = 'inline-block';
+        document.getElementById('btn-pull').style.display = 'none';
+    }
+
+    function catchFish() {
+        let caughtId = drawFish();
+        let item = ITEMS[caughtId];
+        let added = addItem(caughtId);
+        
+        if (added) {
+            logFish(`Caught ${item.name}! ${item.emoji} (+${item.exp} XP)`);
+            player.exp += item.exp;
+            updateUI(); // Auto-saves here
+        }
+    }
+
+
+    // --- MARKET / SHOP --- //
+    function updateShopTimer() {
+        shopTimeRemaining--;
+        if (shopTimeRemaining <= 0) {
+            shopTimeRemaining = 300;
+            generateShop();
+        }
+        let m = Math.floor(shopTimeRemaining / 60).toString().padStart(2, '0');
+        let s = (shopTimeRemaining % 60).toString().padStart(2, '0');
+        document.getElementById('shop-timer').innerText = `${m}:${s}`;
+    }
+
+    function generateShop() {
+        player.shopInventory =[];
+        
+        // Slots 1-3: Standard Fish
+        player.shopInventory.push(createShopSlot('sardine', rand(10, 15), 100, 'sell'));
+        player.shopInventory.push(createShopSlot('salmon', rand(50, 70), 70, 'sell'));
+        player.shopInventory.push(createShopSlot('tuna', rand(150, 250), 50, 'sell'));
+
+        // Additional Slots
+        let pool = Object.keys(ITEMS).filter(k => ITEMS[k].type !== 'fish' && ITEMS[k].type !== 'asset');
+        
+        for (let i = 3; i < player.shopSlots; i++) {
+            let isBuying = Math.random() < 0.25; // 25% chance trader is selling an item to you
+            if (isBuying) {
+                // Buyable Rods or Books
+                let buyPool =['rod_2', 'rod_3', 'bj_book_1', 'bj_book_2'];
+                let id = buyPool[Math.floor(Math.random() * buyPool.length)];
+                let price = Math.floor(ITEMS[id].basePrice * randFloat(0.9, 1.2));
+                player.shopInventory.push(createShopSlot(id, price, 1, 'buy'));
+            } else {
+                // Selling Treasures to trader
+                let id = pool[Math.floor(Math.random() * pool.length)];
+                let limit = rand(1, 5);
+                let price = Math.floor(ITEMS[id].basePrice * randFloat(0.8, 1.3));
+                player.shopInventory.push(createShopSlot(id, price, limit, 'sell'));
+            }
+        }
+        
+        saveGame();
+        if(document.getElementById('view-shop').classList.contains('active')) renderShop();
+    }
+
+    function createShopSlot(id, price, limit, actionType) {
+        return { id, price, limit, sold: 0, actionType };
+    }
+
+    function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function randFloat(min, max) { return Math.random() * (max - min) + min; }
+
+    function renderShop() {
+        let grid = document.getElementById('shop-grid');
+        grid.innerHTML = '';
+        player.shopInventory.forEach((slot, index) => {
+            let item = ITEMS[slot.id];
+            let rem = slot.limit - slot.sold;
+            let div = document.createElement('div');
+            div.className = `shop-slot rarity-${item.rarity}`;
+            
+            if (slot.actionType === 'sell') {
+                let pInvQty = getInvQty(slot.id);
+                div.innerHTML = `
+                    <h3>${item.emoji} ${item.name}</h3>
+                    <div class="price">We Buy: ₹${slot.price.toLocaleString()}</div>
+                    <div class="limit">Shop Limit: ${rem} | You have: ${pInvQty}</div>
+                    <div class="shop-slot-actions">
+                        <button ${rem<=0 || pInvQty<=0 ? 'disabled':''} onclick="shopTransact(${index}, 1)">Sell 1</button>
+                        <button ${rem<=0 || pInvQty<=0 ? 'disabled':''} onclick="shopTransact(${index}, ${Math.min(rem, pInvQty)})">Sell Max</button>
+                    </div>
+                `;
+            } else {
+                div.innerHTML = `
+                    <h3>${item.emoji} ${item.name}</h3>
+                    <p style="font-size:12px">${item.desc||''}</p>
+                    <div class="price">For Sale: ₹${slot.price.toLocaleString()}</div>
+                    <div class="limit">In Stock: ${rem}</div>
+                    <div class="shop-slot-actions">
+                        <button ${rem<=0 || player.money < slot.price ? 'disabled':''} onclick="shopTransact(${index}, 1)">Buy</button>
+                    </div>
+                `;
+            }
+            grid.appendChild(div);
+        });
+    }
+
+    function shopTransact(index, qty) {
+        let slot = player.shopInventory[index];
+        let item = ITEMS[slot.id];
+
+        if (slot.actionType === 'sell') {
+            if (getInvQty(slot.id) >= qty && (slot.limit - slot.sold) >= qty) {
+                removeItem(slot.id, qty);
+                player.money += slot.price * qty;
+                slot.sold += qty;
+            }
+        } else {
+            if (player.money >= slot.price * qty && (slot.limit - slot.sold) >= qty) {
+                if (addItem(slot.id)) {
+                    player.money -= slot.price * qty;
+                    slot.sold += qty;
+                }
+            }
+        }
+        updateUI(); // Auto-saves
+        renderShop();
+    }
+
+
+    // --- BLACKJACK LOGIC --- //
+    let bjDeck =[];
+    let bjDealer = { cards: [] };
+    let bjHands =[];
+    let currentHandIndex = 0;
+    let bjMinBet = 10;
+    let bjMaxBet = 1000;
+    let bjState = 'betting';
+
+    function updateBjLimits() {
+        let mode = document.getElementById('bj-mode').value;
+        if(mode == 1) { bjMinBet=10; bjMaxBet=1000; }
+        if(mode == 2) { bjMinBet=1000; bjMaxBet=10000; }
+        if(mode == 3) { bjMinBet=10000; bjMaxBet=100000; }
+        if(mode == 4) { bjMinBet=100000; bjMaxBet=1000000; }
+        if(mode == 5) { bjMinBet=1000000; bjMaxBet=10000000; }
+        document.getElementById('bj-bet').placeholder = `₹${bjMinBet.toLocaleString()} - ₹${bjMaxBet.toLocaleString()}`;
+    }
+
+    function buildBjDeck() {
+        bjDeck = [];
+        const suits = ['♠','♥','♦','♣'];
+        const values =['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+        for(let d=0; d<6; d++) { // 6 Decks
+            for(let s of suits) {
+                for(let v of values) {
+                    let weight = parseInt(v);
+                    if(['J','Q','K'].includes(v)) weight = 10;
+                    if(v === 'A') weight = 11;
+                    bjDeck.push({suit: s, value: v, weight: weight});
+                }
+            }
+        }
+        for (let i = bjDeck.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [bjDeck[i], bjDeck[j]] = [bjDeck[j], bjDeck[i]];
+        }
+    }
+
+    function drawCard() {
+        if(bjDeck.length < 20) buildBjDeck();
+        return bjDeck.pop();
+    }
+
+    function getScore(cards) {
+        let score = 0; let aces = 0;
+        for(let c of cards) { score += c.weight; if(c.value === 'A') aces++; }
+        while(score > 21 && aces > 0) { score -= 10; aces--; }
+        return score;
+    }
+
+    function startBjRound() {
+        if(bjState === 'playing') return;
+        let betInput = parseInt(document.getElementById('bj-bet').value);
+        if(isNaN(betInput) || betInput < bjMinBet || betInput > bjMaxBet) {
+            setBjMsg(`Invalid bet! Must be between ₹${bjMinBet.toLocaleString()} and ₹${bjMaxBet.toLocaleString()}`); return;
+        }
+        if(player.money < betInput) { setBjMsg("Not enough money!"); return; }
+
+        player.money -= betInput;
+        updateUI();
+        
+        buildBjDeck();
+        bjDealer.cards =[drawCard(), drawCard()];
+        bjHands = [{ cards: [drawCard(), drawCard()], bet: betInput, status: 'active' }];
+        currentHandIndex = 0;
+        bjState = 'playing';
+
+        document.getElementById('btn-bj-deal').style.display = 'none';
+        document.getElementById('bj-controls').style.display = 'flex';
+        setBjMsg("Good luck!");
+        renderBjTable();
+        checkBlackjack();
+    }
+
+    function setBjMsg(msg) { document.getElementById('bj-msg').innerHTML = msg; }
+
+    function applyWin(betAmount, multiplier, messagePrefix) {
+        let winTotal = betAmount * multiplier;
+        let profit = winTotal - betAmount; // Profit portion determines XP
+        let xpGained = Math.max(1, Math.floor(profit / 10)); // 10% of profit is XP
+        
+        player.money += winTotal;
+        player.exp += xpGained;
+        
+        return `${messagePrefix} (Won ₹${winTotal.toLocaleString()}) <span style='color:#fff'>[+${xpGained} XP]</span>`;
+    }
+
+    function checkBlackjack() {
+        let pScore = getScore(bjHands[0].cards);
+        let dScore = getScore(bjDealer.cards);
+        
+        let pBJ = (pScore === 21 && bjHands[0].cards.length === 2);
+        let dBJ = (dScore === 21 && bjDealer.cards.length === 2);
+
+        if(pBJ || dBJ) {
+            bjState = 'gameOver';
+            renderBjTable();
+            if(pBJ && dBJ) {
+                setBjMsg("Push! Both have Blackjack.");
+                player.money += bjHands[0].bet;
+            } else if (pBJ) {
+                let multiplier = hasItem('bj_book_2') ? 3 : 2.5; // Book 2 makes it 2:1 ratio (returns 3x total)
+                setBjMsg(applyWin(bjHands[0].bet, multiplier, "Blackjack!"));
+            } else {
+                if(hasItem('bj_book_1') && bjDealer.cards[0].value === 'A') {
+                    setBjMsg("Dealer Blackjack, but Book of Insurance saved your bet!");
+                    player.money += bjHands[0].bet;
+                } else {
+                    setBjMsg("Dealer has Blackjack. You lose.");
+                }
+            }
+            endBjRound();
+        }
+    }
+
+    function renderBjTable() {
+        let dCardsHtml = '';
+        let dScore = '?';
+        if (bjState === 'gameOver' || bjState === 'dealerTurn') {
+            dScore = getScore(bjDealer.cards);
+            bjDealer.cards.forEach(c => {
+                let color = (c.suit==='♥'||c.suit==='♦') ? 'red' : '';
+                dCardsHtml += `<div class="card ${color}">${c.value}${c.suit}</div>`;
+            });
+        } else {
+            let c0 = bjDealer.cards[0];
+            let color = (c0.suit==='♥'||c0.suit==='♦') ? 'red' : '';
+            dCardsHtml += `<div class="card ${color}">${c0.value}${c0.suit}</div>`;
+            dCardsHtml += `<div class="card hidden"></div>`;
+        }
+        document.getElementById('dealer-score').innerText = `Dealer: ${dScore}`;
+        document.getElementById('dealer-cards').innerHTML = dCardsHtml;
+
+        let pArea = document.getElementById('player-area');
+        pArea.innerHTML = '';
+        
+        bjHands.forEach((hand, i) => {
+            let score = getScore(hand.cards);
+            let isActive = (i === currentHandIndex && bjState === 'playing') ? 'active-hand' : '';
+            
+            let html = `<div style="text-align:center" class="${isActive}">
+                <div class="hand-score">Player: ${score} (Bet: ₹${hand.bet.toLocaleString()})</div>
+                <div class="cards-area" style="min-height:auto;">`;
+            
+            hand.cards.forEach(c => {
+                let color = (c.suit==='♥'||c.suit==='♦') ? 'red' : '';
+                html += `<div class="card ${color}">${c.value}${c.suit}</div>`;
+            });
+            html += `</div></div>`;
+            pArea.innerHTML += html;
+        });
+
+        if (bjState === 'playing') {
+            let hand = bjHands[currentHandIndex];
+            document.getElementById('btn-bj-double').disabled = (hand.cards.length > 2 || player.money < hand.bet);
+            document.getElementById('btn-bj-split').disabled = (hand.cards.length === 2 && hand.cards[0].value === hand.cards[1].value && bjHands.length === 1 && player.money >= hand.bet) ? false : true;
+        }
+    }
+
+    function bjHit() {
+        let hand = bjHands[currentHandIndex];
+        hand.cards.push(drawCard());
+        if(getScore(hand.cards) >= 21) {
+            hand.status = getScore(hand.cards) === 21 ? 'stood' : 'busted';
+            nextHand();
+        } else renderBjTable();
+    }
+
+    function bjStand() { bjHands[currentHandIndex].status = 'stood'; nextHand(); }
+
+    function bjDouble() {
+        let hand = bjHands[currentHandIndex];
+        player.money -= hand.bet;
+        hand.bet *= 2;
+        hand.cards.push(drawCard());
+        hand.status = getScore(hand.cards) > 21 ? 'busted' : 'stood';
+        updateUI();
+        nextHand();
+    }
+
+    function bjSplit() {
+        let hand = bjHands[currentHandIndex];
+        player.money -= hand.bet;
+        
+        let newHand = { cards: [hand.cards.pop()], bet: hand.bet, status: 'active' };
+        hand.cards.push(drawCard());
+        newHand.cards.push(drawCard());
+        
+        bjHands.push(newHand);
+        updateUI();
+        renderBjTable();
+    }
+
+    function nextHand() {
+        currentHandIndex++;
+        if(currentHandIndex >= bjHands.length) {
+            bjState = 'dealerTurn'; playDealer();
+        } else renderBjTable();
+    }
+
+    function playDealer() {
+        renderBjTable();
+        let allBusted = bjHands.every(h => h.status === 'busted');
+        
+        const drawDealer = () => {
+            if(!allBusted && getScore(bjDealer.cards) < 17) {
+                bjDealer.cards.push(drawCard());
+                renderBjTable();
+                setTimeout(drawDealer, 500);
+            } else {
+                bjState = 'gameOver';
+                resolveBjBets();
+            }
+        };
+        setTimeout(drawDealer, 500);
+    }
+
+    function resolveBjBets() {
+        let dScore = getScore(bjDealer.cards);
+        let msg = "";
+
+        bjHands.forEach((hand, i) => {
+            let pScore = getScore(hand.cards);
+            let prefix = bjHands.length > 1 ? `Hand ${i+1}: ` : '';
+
+            if (hand.status === 'busted') {
+                msg += `${prefix}Busted. <br>`;
+            } else if (dScore > 21) {
+                msg += applyWin(hand.bet, 2, `${prefix}Dealer busted, you win!`) + "<br>";
+            } else if (pScore > dScore) {
+                msg += applyWin(hand.bet, 2, `${prefix}You win!`) + "<br>";
+            } else if (pScore === dScore) {
+                msg += `${prefix}Push. <br>`;
+                player.money += hand.bet;
+            } else {
+                msg += `${prefix}Dealer wins. <br>`;
+            }
+        });
+
+        setBjMsg(msg);
+        renderBjTable();
+        endBjRound();
+    }
+
+    function endBjRound() {
+        updateUI(); // Auto-saves progress
+        document.getElementById('btn-bj-deal').style.display = 'inline-block';
+        document.getElementById('bj-controls').style.display = 'none';
+    }
+
+</script>
+</body>
+</html>
