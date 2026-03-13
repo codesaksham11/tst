@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fisherman's Casino</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --deep: #050508;
+  --panel: #12121a;
+  --panel2: #1a1a26;
+  --border: #2a2a40;
+  --gold: #c8a84b;
+  --gold2: #f0d080;
+  --gold3: #8a6a20;
+  --teal: #2abfbf;
+  --teal2: #1a8f8f;
+  --red: #e03030;
+  --green: #28a060;
+  --green2: #1a6a40;
+  --text: #d4cfc8;
+  --text2: #8a8070;
+  --common: #9e9e9e;
+  --uncommon: #4caf50;
+  --rare: #2196f3;
+  --epic: #9c27b0;
+  --legendary: #ff9800;
+  --heroic: #e91e63;
+  --shadow: 0 8px 32px rgba(0,0,0,0.6);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Cinzel',serif;overflow-x:hidden;min-height:100vh;}
+
+/* ── LOADING SCREEN ── */
+#loader{position:fixed;inset:0;background:var(--deep);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;}
+#loader h1{font-family:'Cinzel Decorative',serif;font-size:clamp(22px,5vw,42px);color:var(--gold);text-shadow:0 0 30px var(--gold3);letter-spacing:3px;animation:pulse 2s ease-in-out infinite;}
+.loader-fish{font-size:50px;animation:swim 1.5s ease-in-out infinite;}
+.loader-bar-wrap{width:min(340px,80vw);height:6px;background:#1a1a2a;border-radius:99px;overflow:hidden;border:1px solid var(--border);}
+.loader-bar{height:100%;width:0%;background:linear-gradient(90deg,var(--gold3),var(--gold),var(--gold2));border-radius:99px;transition:width 0.3s ease;}
+.loader-step{color:var(--text2);font-family:'IM Fell English',serif;font-size:14px;font-style:italic;min-height:20px;transition:0.3s;}
+@keyframes pulse{0%,100%{opacity:0.8}50%{opacity:1;text-shadow:0 0 50px var(--gold);}}
+@keyframes swim{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-12px) rotate(5deg)}}
+
+/* ── NAVBAR ── */
+#navbar{background:linear-gradient(180deg,#0d0d18 0%,#090912 100%);padding:10px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--gold3);position:sticky;top:0;z-index:100;gap:10px;flex-wrap:wrap;}
+.nav-brand{font-family:'Cinzel Decorative',serif;font-size:clamp(13px,3vw,20px);color:var(--gold);letter-spacing:2px;text-shadow:0 0 20px var(--gold3);white-space:nowrap;}
+.hamburger{font-size:22px;cursor:pointer;color:var(--gold);padding:4px 8px;border-radius:4px;transition:0.2s;user-select:none;}
+.hamburger:hover{background:rgba(200,168,75,0.1);}
+.stats{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.stat-badge{background:var(--panel2);border:1px solid var(--border);padding:5px 10px;border-radius:6px;font-size:clamp(11px,2.2vw,14px);font-family:'IM Fell English',serif;color:var(--text);white-space:nowrap;}
+.stat-badge.gold-badge{border-color:var(--gold3);color:var(--gold);}
+
+/* ── SIDEBAR ── */
+#sidebar{position:fixed;top:0;left:-270px;width:270px;height:100%;background:linear-gradient(180deg,#0d0d18,#090912);border-right:1px solid var(--gold3);transition:0.3s cubic-bezier(.4,0,.2,1);z-index:1000;padding-top:60px;box-shadow:5px 0 30px rgba(0,0,0,0.8);}
+#sidebar.open{left:0;}
+#sidebar a{display:flex;align-items:center;gap:12px;padding:14px 22px;color:var(--text);text-decoration:none;font-size:16px;border-bottom:1px solid #1a1a2a;cursor:pointer;transition:0.2s;font-family:'Cinzel',serif;letter-spacing:1px;}
+#sidebar a:hover{background:rgba(200,168,75,0.07);color:var(--gold);padding-left:30px;}
+#sidebar a .nav-icon{font-size:20px;width:28px;text-align:center;}
+.close-btn{position:absolute;top:12px;right:18px;font-size:28px;cursor:pointer;color:var(--text2);transition:0.2s;}
+.close-btn:hover{color:var(--gold);}
+.sidebar-footer{padding:18px 22px;position:absolute;bottom:0;width:100%;border-top:1px solid #1a1a2a;}
+#overlay-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999;}
+
+/* ── MAIN VIEWS ── */
+.view{display:none;padding:20px;max-width:1000px;margin:auto;animation:fadeIn 0.3s ease;}
+.view.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.view-title{font-family:'Cinzel Decorative',serif;font-size:clamp(16px,4vw,24px);color:var(--gold);margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--gold3);display:flex;align-items:center;gap:10px;letter-spacing:2px;}
+
+/* ── BUTTONS ── */
+button{background:linear-gradient(135deg,var(--green2),var(--green));color:#fff;border:1px solid rgba(255,255,255,0.1);padding:9px 18px;cursor:pointer;border-radius:6px;font-weight:600;transition:0.2s;font-family:'Cinzel',serif;font-size:13px;letter-spacing:0.5px;}
+button:hover{filter:brightness(1.15);transform:translateY(-1px);}
+button:active{transform:translateY(0);}
+button:disabled{background:linear-gradient(135deg,#222,#333);color:#555;cursor:not-allowed;transform:none;filter:none;}
+button.btn-gold{background:linear-gradient(135deg,var(--gold3),var(--gold));}
+button.btn-danger{background:linear-gradient(135deg,#7a1010,var(--red));}
+button.btn-teal{background:linear-gradient(135deg,var(--teal2),var(--teal));}
+button.btn-lg{font-size:16px;padding:12px 28px;border-radius:30px;letter-spacing:1px;}
+select,input{padding:9px 12px;border-radius:6px;border:1px solid var(--border);background:var(--panel2);color:var(--text);font-family:'Cinzel',serif;font-size:13px;width:100%;max-width:220px;}
+select:focus,input:focus{outline:none;border-color:var(--gold3);}
+
+/* ── RARITY ── */
+.rarity-common{border:1px solid var(--common)!important;box-shadow:0 0 6px rgba(158,158,158,0.2);}
+.rarity-uncommon{border:1px solid var(--uncommon)!important;box-shadow:0 0 6px rgba(76,175,80,0.25);}
+.rarity-rare{border:1px solid var(--rare)!important;box-shadow:0 0 8px rgba(33,150,243,0.3);}
+.rarity-epic{border:1px solid var(--epic)!important;box-shadow:0 0 10px rgba(156,39,176,0.35);}
+.rarity-legendary{border:1px solid var(--legendary)!important;box-shadow:0 0 12px rgba(255,152,0,0.4);}
+.rarity-heroic{border:1px solid var(--heroic)!important;box-shadow:0 0 16px rgba(233,30,99,0.5);animation:heroicPulse 2s ease-in-out infinite;}
+@keyframes heroicPulse{0%,100%{box-shadow:0 0 16px rgba(233,30,99,0.5)}50%{box-shadow:0 0 28px rgba(233,30,99,0.8)}}
+
+/* ── FISHING ── */
+#pond{width:100%;max-width:620px;height:340px;border-radius:16px;position:relative;overflow:hidden;margin:0 auto 18px;border:2px solid #1a4060;cursor:crosshair;background:radial-gradient(ellipse at 30% 40%,#0e5a8a 0%,#073a6a 50%,#031d3a 100%);}
+.pond-ripple{position:absolute;width:60px;height:20px;border-radius:50%;border:1px solid rgba(255,255,255,0.12);top:50%;left:50%;transform:translate(-50%,-50%);animation:ripple 3s ease-out infinite;}
+.pond-ripple:nth-child(2){animation-delay:1s;width:100px;height:32px;}
+.pond-ripple:nth-child(3){animation-delay:2s;width:140px;height:46px;}
+@keyframes ripple{0%{opacity:0.4;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(2)}}
+#bobber{width:18px;height:18px;background:radial-gradient(circle at 35% 35%,#ff6060,#c00);border-radius:50%;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.5);transition:top 0.1s,left 0.1s;}
+#bobber::before{content:'';position:absolute;bottom:100%;left:50%;transform:translateX(-50%);width:1px;height:20px;background:rgba(255,255,255,0.4);}
+#bobber.bobbing{animation:bob 0.8s ease-in-out infinite;}
+#bobber.splash{animation:splashAnim 0.3s ease-out;background:radial-gradient(circle at 35% 35%,#ffff60,#ffa000)!important;box-shadow:0 0 20px #ffd700,0 0 40px rgba(255,165,0,0.5)!important;}
+@keyframes bob{0%,100%{margin-top:0}50%{margin-top:5px}}
+@keyframes splashAnim{0%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(2.5)}100%{transform:translate(-50%,-50%) scale(1)}}
+.trail-particle{position:absolute;width:8px;height:8px;background:rgba(100,200,255,0.8);border-radius:50%;box-shadow:0 0 8px rgba(100,200,255,0.9);pointer-events:none;}
+#fish-log{text-align:center;margin-top:10px;font-size:18px;font-family:'IM Fell English',serif;font-style:italic;min-height:28px;color:var(--gold2);text-shadow:0 0 10px rgba(240,208,128,0.4);}
+#fishing-controls{text-align:center;}
+.pull-flash{animation:flashPull 0.4s ease-in-out infinite;}
+@keyframes flashPull{0%,100%{filter:brightness(1)}50%{filter:brightness(1.5) drop-shadow(0 0 12px #ffd700)}}
+
+/* Fish particle drop */
+@keyframes fishCatch{0%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-200%) scale(0)}}
+
+/* ── INVENTORY ── */
+.inv-actions{margin-bottom:18px;display:flex;gap:10px;flex-wrap:wrap;background:var(--panel);padding:14px;border-radius:10px;border:1px solid var(--border);}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:12px;}
+.inv-item{background:var(--panel);padding:12px;text-align:center;border-radius:8px;position:relative;display:flex;flex-direction:column;justify-content:space-between;transition:transform 0.2s;}
+.inv-item:hover{transform:translateY(-2px);}
+.inv-item .emoji{font-size:38px;margin-bottom:6px;}
+.inv-item .qty{position:absolute;top:6px;right:6px;background:rgba(0,0,0,0.8);border:1px solid var(--border);padding:2px 7px;border-radius:10px;font-size:11px;font-weight:bold;color:var(--gold);}
+.inv-item .item-name{font-size:12px;font-weight:600;margin-bottom:3px;color:var(--text);}
+.inv-item .item-rarity{font-size:10px;font-family:'IM Fell English',serif;font-style:italic;margin-bottom:6px;}
+.rarity-label-common{color:var(--common);}
+.rarity-label-uncommon{color:var(--uncommon);}
+.rarity-label-rare{color:var(--rare);}
+.rarity-label-epic{color:var(--epic);}
+.rarity-label-legendary{color:var(--legendary);}
+.rarity-label-heroic{color:var(--heroic);}
+.inv-item button{margin-top:4px;width:100%;font-size:11px;padding:6px;}
+
+/* ── SHOP ── */
+#shop-timer-wrap{background:var(--panel);border:1px solid var(--gold3);border-radius:8px;padding:10px 18px;display:inline-flex;align-items:center;gap:10px;}
+#shop-timer{color:var(--gold);font-size:22px;font-family:'Cinzel Decorative',serif;letter-spacing:2px;}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;margin-top:18px;}
+.shop-slot{background:var(--panel);padding:16px;border-radius:10px;text-align:center;display:flex;flex-direction:column;justify-content:space-between;transition:transform 0.2s;}
+.shop-slot:hover{transform:translateY(-2px);}
+.shop-slot .shop-emoji{font-size:36px;margin-bottom:8px;}
+.shop-slot .shop-name{font-size:14px;font-weight:600;margin-bottom:4px;}
+.shop-slot .shop-price{font-size:17px;font-family:'IM Fell English',serif;margin:8px 0;color:var(--gold);}
+.shop-slot .shop-limit{font-size:11px;color:var(--text2);margin-bottom:10px;}
+.shop-slot-actions{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;}
+.shop-tag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:99px;margin-bottom:6px;font-family:'IM Fell English',serif;font-style:italic;}
+.shop-tag.buying{background:rgba(40,160,96,0.2);color:var(--green);border:1px solid var(--green2);}
+.shop-tag.selling{background:rgba(200,168,75,0.15);color:var(--gold);border:1px solid var(--gold3);}
+
+/* ── BLACKJACK ── */
+#bj-table{background:radial-gradient(ellipse at center,#0a4a20 0%,#063015 60%,#031a0c 100%);border-radius:20px;padding:22px;min-height:360px;border:4px solid #2a1800;box-shadow:inset 0 0 60px rgba(0,0,0,0.6),0 0 30px rgba(0,0,0,0.5);position:relative;text-align:center;margin-top:14px;}
+#bj-table::before{content:'FISHERMAN\'S CASINO';position:absolute;top:14px;left:50%;transform:translateX(-50%);color:rgba(200,168,75,0.15);font-family:'Cinzel Decorative',serif;font-size:12px;letter-spacing:4px;white-space:nowrap;}
+.cards-area{min-height:100px;display:flex;justify-content:center;flex-wrap:wrap;gap:6px;padding:6px;}
+.card{width:58px;height:86px;background:#fff;color:#111;border-radius:6px;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-direction:column;box-shadow:2px 4px 10px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.8);border:1px solid #ddd;margin:3px;position:relative;transition:transform 0.2s;}
+.card:hover{transform:translateY(-4px);}
+.card .card-suit{font-size:12px;opacity:0.7;}
+.card.red{color:#c00;}
+.card.hidden{background:#b71c1c;background-image:repeating-linear-gradient(45deg,transparent,transparent 8px,rgba(0,0,0,0.15) 8px,rgba(0,0,0,0.15) 16px);color:transparent;}
+.card.hidden .card-suit{display:none;}
+.card.deal-in{animation:dealCard 0.3s ease-out;}
+@keyframes dealCard{from{transform:translateY(-30px) scale(0.8);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+.hand-score{background:rgba(0,0,0,0.7);border:1px solid rgba(200,168,75,0.3);padding:5px 12px;border-radius:20px;display:inline-block;margin-bottom:8px;font-size:13px;color:var(--gold);font-family:'IM Fell English',serif;}
+.split-hands{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;}
+.active-hand{outline:2px solid var(--gold);outline-offset:6px;border-radius:6px;}
+.bj-bet-area{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;background:var(--panel);padding:16px;border-radius:12px;border:1px solid var(--border);margin-bottom:14px;}
+#bj-controls{background:var(--panel);padding:14px;border-radius:10px;border:1px solid var(--border);display:none;justify-content:center;gap:10px;flex-wrap:wrap;}
+#bj-msg{font-size:16px;font-family:'IM Fell English',serif;font-style:italic;text-align:center;margin:10px 0;min-height:24px;color:var(--gold2);}
+
+/* BJ 21 Bonus Banner */
+#bj-21-banner{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:10;pointer-events:none;border-radius:18px;}
+#bj-21-banner.show{display:flex;animation:bannerIn 0.5s cubic-bezier(.175,.885,.32,1.275);}
+@keyframes bannerIn{from{transform:scale(0.5);opacity:0}to{transform:scale(1);opacity:1}}
+.banner-inner{background:linear-gradient(135deg,#7a4800,var(--gold),#7a4800);padding:18px 36px;border-radius:16px;font-family:'Cinzel Decorative',serif;font-size:clamp(20px,5vw,36px);color:#fff;text-shadow:0 2px 4px rgba(0,0,0,0.5);box-shadow:0 0 60px rgba(200,168,75,0.8),inset 0 1px 0 rgba(255,255,255,0.3);text-align:center;}
+
+/* ── ACHIEVEMENTS ── */
+.ach-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;}
+.ach-card{background:var(--panel);border:1px solid var(--border);padding:14px;border-radius:10px;display:flex;gap:12px;align-items:flex-start;transition:0.2s;}
+.ach-card.earned{border-color:var(--gold3);background:linear-gradient(135deg,#12120a,#1a1800);}
+.ach-card.earned .ach-name{color:var(--gold);}
+.ach-icon{font-size:30px;min-width:36px;text-align:center;}
+.ach-name{font-size:13px;font-weight:600;margin-bottom:3px;}
+.ach-desc{font-size:11px;color:var(--text2);font-family:'IM Fell English',serif;font-style:italic;}
+.ach-reward{font-size:11px;color:var(--green);margin-top:4px;}
+
+/* ── LEADERBOARD ── */
+.lb-row{display:flex;align-items:center;gap:14px;padding:12px 16px;background:var(--panel);border-radius:8px;border:1px solid var(--border);margin-bottom:8px;}
+.lb-rank{font-size:20px;min-width:32px;text-align:center;}
+.lb-name{flex:1;font-size:14px;}
+.lb-score{color:var(--gold);font-family:'IM Fell English',serif;font-size:15px;}
+
+/* ── DAILY QUESTS ── */
+.quest-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.quest-card.done{border-color:var(--gold3);opacity:0.7;}
+.quest-info{flex:1;min-width:160px;}
+.quest-name{font-size:14px;font-weight:600;margin-bottom:3px;}
+.quest-desc{font-size:12px;color:var(--text2);font-family:'IM Fell English',serif;font-style:italic;}
+.quest-prog{height:5px;background:#1a1a2a;border-radius:99px;margin-top:6px;overflow:hidden;}
+.quest-prog-fill{height:100%;background:linear-gradient(90deg,var(--gold3),var(--gold));border-radius:99px;transition:width 0.5s ease;}
+.quest-reward{font-size:12px;color:var(--green);white-space:nowrap;}
+
+/* ── TOAST NOTIFICATIONS ── */
+#toast-container{position:fixed;top:70px;right:16px;z-index:5000;display:flex;flex-direction:column;gap:8px;max-width:280px;}
+.toast{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:13px;font-family:'IM Fell English',serif;font-style:italic;color:var(--text);box-shadow:var(--shadow);animation:toastIn 0.3s ease,toastOut 0.3s ease 2.7s forwards;display:flex;align-items:center;gap:10px;}
+.toast.toast-gold{border-color:var(--gold3);color:var(--gold);}
+.toast.toast-green{border-color:var(--green2);color:#6ddc9a;}
+.toast.toast-red{border-color:#7a1010;color:#ff8080;}
+.toast.toast-epic{border-color:var(--epic);color:#d580ff;}
+.toast.toast-legendary{border-color:var(--legendary);color:var(--legendary);}
+.toast.toast-heroic{border-color:var(--heroic);color:#ff80a0;}
+@keyframes toastIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateX(30px)}}
+
+/* ── MODAL ── */
+#modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2000;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px);}
+#modal-overlay.show{display:flex;}
+.modal{background:var(--panel);border:1px solid var(--gold3);padding:28px;border-radius:14px;width:100%;max-width:420px;text-align:center;box-shadow:0 0 60px rgba(200,168,75,0.15);}
+.modal h3{font-family:'Cinzel Decorative',serif;color:var(--gold);margin-bottom:14px;font-size:18px;}
+.modal p{font-family:'IM Fell English',serif;font-style:italic;color:var(--text);line-height:1.6;}
+.modal-buttons{display:flex;justify-content:center;gap:10px;margin-top:20px;flex-wrap:wrap;}
+
+/* ── XP BAR FULL WIDTH ── */
+.xp-bar-wrap{height:3px;background:#1a1a2a;position:fixed;bottom:0;left:0;right:0;z-index:99;}
+.xp-bar-fill{height:100%;background:linear-gradient(90deg,var(--gold3),var(--gold2));transition:width 0.6s ease;}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  #navbar{flex-direction:column;align-items:flex-start;}
+  .stats{gap:6px;}
+  #pond{height:270px;}
+  .inv-grid{grid-template-columns:repeat(auto-fill,minmax(105px,1fr));}
+  .card{width:48px;height:72px;font-size:14px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ── LOADING SCREEN ── -->
+<div id="loader">
+  <div class="loader-fish">🎣</div>
+  <h1>Fisherman's Casino</h1>
+  <div class="loader-bar-wrap"><div class="loader-bar" id="loader-bar"></div></div>
+  <div class="loader-step" id="loader-step">Casting nets...</div>
+</div>
+
+<!-- ── TOAST ── -->
+<div id="toast-container"></div>
+
+<!-- ── XP BAR ── -->
+<div class="xp-bar-wrap"><div class="xp-bar-fill" id="xp-bar-fill" style="width:0%"></div></div>
+
+<!-- ── NAVBAR ── -->
+<div id="navbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div class="hamburger" onclick="toggleMenu()">☰</div>
+    <div class="nav-brand">🎣 Fisherman's Casino</div>
+  </div>
+  <div class="stats">
+    <span class="stat-badge gold-badge" id="ui-money">💰 ₹500</span>
+    <span class="stat-badge gold-badge" id="ui-gems">💎 0</span>
+    <span class="stat-badge" id="ui-level">Lvl 1</span>
+    <span class="stat-badge" id="ui-rod">Rod I</span>
+    <span class="stat-badge" id="ui-inv-count">🎒 0/100</span>
+  </div>
+</div>
+
+<!-- ── SIDEBAR ── -->
+<div id="overlay-bg" onclick="toggleMenu()"></div>
+<div id="sidebar">
+  <div class="close-btn" onclick="toggleMenu()">×</div>
+  <a onclick="switchView('fishing')"><span class="nav-icon">🎣</span>Fishing Pond</a>
+  <a onclick="switchView('inventory')"><span class="nav-icon">🎒</span>Inventory</a>
+  <a onclick="switchView('shop')"><span class="nav-icon">🏪</span>Market</a>
+  <a onclick="switchView('blackjack')"><span class="nav-icon">🃏</span>Blackjack</a>
+  <a onclick="switchView('quests')"><span class="nav-icon">📜</span>Daily Quests</a>
+  <a onclick="switchView('achievements')"><span class="nav-icon">🏆</span>Achievements</a>
+  <div class="sidebar-footer">
+    <a onclick="resetSave()" style="color:var(--red);font-size:13px;padding:10px 0;border:none;">⚠️ Reset Progress</a>
+  </div>
+</div>
+
+<!-- ── FISHING VIEW ── -->
+<div id="view-fishing" class="view active">
+  <div class="view-title">🎣 Fishing Pond</div>
+  <div id="pond" onclick="touchPond()">
+    <div class="pond-ripple"></div>
+    <div class="pond-ripple"></div>
+    <div class="pond-ripple"></div>
+    <div id="bobber"></div>
+  </div>
+  <div id="fishing-controls">
+    <button id="btn-cast" class="btn-lg btn-teal" onclick="castRod()">Cast Rod</button>
+    <button id="btn-pull" class="btn-lg btn-gold pull-flash" onclick="pullRod()" style="display:none;">⚡ PULL!</button>
+    <div id="fish-log">Tap 'Cast Rod' to begin your adventure.</div>
+  </div>
+</div>
+
+<!-- ── INVENTORY VIEW ── -->
+<div id="view-inventory" class="view">
+  <div class="view-title">🎒 Inventory</div>
+  <div class="inv-actions">
+    <button class="btn-gold" onclick="upgradeInvCash()">+10 Slots (₹1M)</button>
+    <button class="btn-gold" onclick="upgradeInvGems()">+10 Slots (3 💎)</button>
+    <button onclick="cashGem()">Cash 1 💎 → ₹250k</button>
+    <button onclick="upgradeShopGems()">+1 Shop Slot (10 💎)</button>
+  </div>
+  <div id="inv-grid" class="inv-grid"></div>
+</div>
+
+<!-- ── SHOP VIEW ── -->
+<div id="view-shop" class="view">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:14px;">
+    <div class="view-title" style="margin:0;border:none;">🏪 Market Traders</div>
+    <div id="shop-timer-wrap">
+      <span style="color:var(--text2);font-size:12px;font-family:'IM Fell English',serif;font-style:italic;">Refreshes in</span>
+      <span id="shop-timer">05:00</span>
+    </div>
+  </div>
+  <p style="color:var(--text2);font-size:13px;font-family:'IM Fell English',serif;font-style:italic;margin-bottom:4px;">Prices and stock refresh every 5 minutes. Trade wisely, captain.</p>
+  <div id="shop-grid" class="shop-grid"></div>
+</div>
+
+<!-- ── BLACKJACK VIEW ── -->
+<div id="view-blackjack" class="view">
+  <div class="view-title">🃏 High Stakes Blackjack</div>
+  <div class="bj-bet-area">
+    <select id="bj-mode" onchange="updateBjLimits()">
+      <option value="1">Mode I: ₹10 – ₹1k</option>
+      <option value="2">Mode II: ₹1k – ₹10k</option>
+      <option value="3">Mode III: ₹10k – ₹100k</option>
+      <option value="4">Mode IV: ₹100k – ₹1M</option>
+      <option value="5">Mode V: ₹1M – ₹10M</option>
+    </select>
+    <input type="number" id="bj-bet" placeholder="Bet amount">
+    <button class="btn-gold" onclick="startBjRound()" id="btn-bj-deal">Deal Cards</button>
+  </div>
+  <div id="bj-msg"></div>
+  <div id="bj-table">
+    <div id="bj-21-banner"><div class="banner-inner">🌟 TWENTY-ONE! 🌟<br><span style="font-size:0.55em;display:block;margin-top:6px;">Bonus Payout!</span></div></div>
+    <div id="dealer-area">
+      <div class="hand-score" id="dealer-score">Dealer: ?</div>
+      <div class="cards-area" id="dealer-cards"></div>
+    </div>
+    <div id="player-area" class="split-hands"></div>
+  </div>
+  <div id="bj-controls">
+    <button onclick="bjHit()">Hit</button>
+    <button onclick="bjStand()" class="btn-danger">Stand</button>
+    <button onclick="bjDouble()" id="btn-bj-double" class="btn-gold">Double Down</button>
+    <button onclick="bjSplit()" id="btn-bj-split" class="btn-teal">Split</button>
+    <button onclick="bjInsurance()" id="btn-bj-insurance" style="display:none;">🛡️ Insurance</button>
+  </div>
+</div>
+
+<!-- ── QUESTS VIEW ── -->
+<div id="view-quests" class="view">
+  <div class="view-title">📜 Daily Quests</div>
+  <p style="color:var(--text2);font-size:13px;font-family:'IM Fell English',serif;font-style:italic;margin-bottom:16px;">Complete quests for bonus rewards. Resets at midnight.</p>
+  <div id="quest-list"></div>
+</div>
+
+<!-- ── ACHIEVEMENTS VIEW ── -->
+<div id="view-achievements" class="view">
+  <div class="view-title">🏆 Achievements</div>
+  <div id="ach-grid" class="ach-grid"></div>
+</div>
+
+<!-- ── MODAL ── -->
+<div id="modal-overlay">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  DATABASE
+// ═══════════════════════════════════════════
+const ITEMS = {
+  'sardine':          { name:'Sardine',          type:'fish',     rarity:'common',    basePrice:12,     stackable:true,  emoji:'🐟', exp:10  },
+  'salmon':           { name:'Salmon',           type:'fish',     rarity:'uncommon',  basePrice:35,     stackable:true,  emoji:'🐠', exp:25  },
+  'tuna':             { name:'Tuna',             type:'fish',     rarity:'rare',      basePrice:65,     stackable:true,  emoji:'🐡', exp:50  },
+  'bronze_statue':    { name:'Bronze Statue',    type:'treasure', rarity:'rare',      basePrice:500,    stackable:false, emoji:'🗽', exp:50  },
+  'silver_coin':      { name:'Silver Coin',      type:'treasure', rarity:'rare',      basePrice:750,    stackable:false, emoji:'🪙', exp:50  },
+  'old_boot':         { name:'Old Boot',         type:'treasure', rarity:'rare',      basePrice:100,    stackable:false, emoji:'👢', exp:50  },
+  'gold_ring':        { name:'Gold Ring',        type:'treasure', rarity:'epic',      basePrice:2000,   stackable:false, emoji:'💍', exp:100 },
+  'emerald_pendant':  { name:'Emerald Pendant',  type:'treasure', rarity:'epic',      basePrice:2500,   stackable:false, emoji:'📿', exp:100 },
+  'bj_book_1':        { name:'Book of Insurance',type:'book',     rarity:'epic',      basePrice:5000,   stackable:false, emoji:'📘', exp:100, desc:'Perk: Free BJ Insurance' },
+  'diamond_goblet':   { name:'Diamond Goblet',   type:'treasure', rarity:'legendary', basePrice:10000,  stackable:false, emoji:'🍷', exp:250 },
+  'pirate_crown':     { name:'Pirate Crown',     type:'treasure', rarity:'legendary', basePrice:15000,  stackable:false, emoji:'👑', exp:250 },
+  'bj_book_2':        { name:'Book of Payouts',  type:'book',     rarity:'legendary', basePrice:25000,  stackable:false, emoji:'📕', exp:250, desc:'Perk: BJ pays 2:1' },
+  'bj_book_3':        { name:'Book of 21',       type:'book',     rarity:'legendary', basePrice:30000,  stackable:false, emoji:'📗', exp:250, desc:'Perk: 21 hit bonus +50%' },
+  'ancient_relic':    { name:'Ancient Relic',    type:'treasure', rarity:'heroic',    basePrice:50000,  stackable:false, emoji:'🏺', exp:1000},
+  'dragon_scale':     { name:'Dragon Scale',     type:'treasure', rarity:'heroic',    basePrice:75000,  stackable:false, emoji:'🐉', exp:1000},
+  'gem':              { name:'Gem',              type:'asset',    rarity:'heroic',    basePrice:250000, stackable:true,  emoji:'💎', exp:1000},
+  'rod_2':            { name:'Fiberglass Rod',   type:'rod',      rarity:'epic',      basePrice:50000,  stackable:false, emoji:'🎣', desc:'Better Rare+ odds' },
+  'rod_3':            { name:'Carbon Rod',       type:'rod',      rarity:'legendary', basePrice:500000, stackable:false, emoji:'🎣', desc:'Best Rare+ odds' },
+  'lucky_charm':      { name:'Lucky Charm',      type:'charm',    rarity:'epic',      basePrice:8000,   stackable:false, emoji:'🍀', exp:100, desc:'Perk: +5% fish XP' },
+  'fish_guide':       { name:'Fish Guide',       type:'book',     rarity:'uncommon',  basePrice:300,    stackable:false, emoji:'📒', exp:30,  desc:'Perk: See fish rarity when caught' },
+};
+
+const ACHIEVEMENTS = [
+  { id:'first_catch',  name:'First Catch',      desc:'Catch your first fish',             icon:'🎣', req:p=>p.stats.totalCaught>=1,    reward:'₹100' },
+  { id:'fisher_10',    name:'Novice Fisher',    desc:'Catch 10 fish',                     icon:'🐟', req:p=>p.stats.totalCaught>=10,   reward:'₹500' },
+  { id:'fisher_100',   name:'Seasoned Fisher',  desc:'Catch 100 fish',                    icon:'🐠', req:p=>p.stats.totalCaught>=100,  reward:'₹5,000' },
+  { id:'fisher_500',   name:'Master Fisher',    desc:'Catch 500 fish',                    icon:'🐡', req:p=>p.stats.totalCaught>=500,  reward:'₹50,000' },
+  { id:'first_rare',   name:'Rarity Seeker',    desc:'Catch a rare item',                 icon:'💍', req:p=>p.stats.raresCaught>=1,    reward:'₹2,000' },
+  { id:'heroic_catch', name:'Heroic Catch',     desc:'Catch a heroic rarity item',        icon:'🏺', req:p=>p.stats.heroicCaught>=1,   reward:'💎 1 Gem' },
+  { id:'bj_win_1',     name:'Lucky Hand',       desc:'Win a blackjack round',             icon:'🃏', req:p=>p.stats.bjWins>=1,         reward:'₹1,000' },
+  { id:'bj_win_10',    name:'Card Shark',       desc:'Win 10 blackjack rounds',           icon:'♠️',  req:p=>p.stats.bjWins>=10,        reward:'₹10,000' },
+  { id:'bj_21',        name:'Perfect 21',       desc:'Hit 21 exactly in blackjack',       icon:'🌟', req:p=>p.stats.bj21s>=1,          reward:'₹5,000' },
+  { id:'rich',         name:'Wealthy Sailor',   desc:'Accumulate ₹1,000,000',             icon:'💰', req:p=>p.stats.peakMoney>=1000000,reward:'₹50,000' },
+  { id:'gem_1',        name:'Gem Collector',    desc:'Own your first gem',                icon:'💎', req:p=>p.gems>=1,                 reward:'+10 Inv Slots' },
+  { id:'level_10',     name:'Seasoned Captain', desc:'Reach level 10',                    icon:'⚓', req:p=>p.level>=10,               reward:'💎 1 Gem' },
+];
+
+const QUESTS_POOL = [
+  { id:'q_catch5',  name:'Morning Haul',       desc:'Catch 5 fish',                  type:'catch',   target:5,   reward:{money:500}   },
+  { id:'q_catch15', name:'Afternoon Fishing',  desc:'Catch 15 fish',                 type:'catch',   target:15,  reward:{money:2000}  },
+  { id:'q_catch30', name:'Full Day Fishing',   desc:'Catch 30 fish',                 type:'catch',   target:30,  reward:{money:6000}  },
+  { id:'q_rare1',   name:'Rare Discovery',     desc:'Catch 1 rare+ item',            type:'rare',    target:1,   reward:{money:3000}  },
+  { id:'q_bj3',     name:'Casino Night',       desc:'Win 3 blackjack hands',         type:'bjwin',   target:3,   reward:{money:5000}  },
+  { id:'q_bj21',    name:'Perfect Hand',       desc:'Hit 21 once in blackjack',      type:'bj21',    target:1,   reward:{money:10000} },
+  { id:'q_sell',    name:'Market Day',         desc:'Sell 5 items at the market',    type:'sell',    target:5,   reward:{money:2000}  },
+  { id:'q_earn',    name:'Big Earner',         desc:'Earn ₹10,000 from any source',  type:'earn',    target:10000,reward:{gems:1}     },
+];
+
+// ═══════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════
+let player = {
+  money:500, gems:0, exp:0, level:1, maxInv:100, shopSlots:6,
+  inv:[], rodLevel:1, lastShopTime:Date.now(), shopInventory:[],
+  stats:{ totalCaught:0, raresCaught:0, heroicCaught:0, bjWins:0, bj21s:0, peakMoney:500, sellCount:0, earnedToday:0 },
+  achievements:[],
+  quests:[], questDate:''
+};
+
+let fishingDeck=[], fishingState='idle';
+let fishingTimeout, biteTimeout;
+let shopTimeRemaining=300;
+let pendingCaughtItem=null;
+
+// BJ state
+let bjDeck=[], bjDealer={cards:[]}, bjHands=[], currentHandIndex=0;
+let bjMinBet=10, bjMaxBet=1000, bjState='betting';
+let bjInsuranceTaken=false;
+
+// ═══════════════════════════════════════════
+//  LOADER
+// ═══════════════════════════════════════════
+const LOAD_STEPS = [
+  'Casting nets...','Checking tides...','Polishing cards...',
+  'Counting gold...','Waking fish...','Opening the casino...'
+];
+
+function runLoader() {
+  const bar = document.getElementById('loader-bar');
+  const step = document.getElementById('loader-step');
+  let pct = 0, si = 0;
+  const iv = setInterval(() => {
+    pct += rand(10,20);
+    if(pct>100) pct=100;
+    bar.style.width = pct+'%';
+    step.innerText = LOAD_STEPS[si++ % LOAD_STEPS.length];
+    if(pct>=100) {
+      clearInterval(iv);
+      setTimeout(() => {
+        document.getElementById('loader').style.transition='opacity 0.6s';
+        document.getElementById('loader').style.opacity='0';
+        setTimeout(()=>document.getElementById('loader').style.display='none',600);
+      }, 400);
+    }
+  }, 350);
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+window.onload = () => {
+  runLoader();
+  loadGame();
+  buildDeck();
+  let secondsPassed = Math.floor((Date.now()-player.lastShopTime)/1000);
+  if(secondsPassed>=300 || player.shopInventory.length===0) generateShop();
+  else shopTimeRemaining=300-secondsPassed;
+  setInterval(updateShopTimer,1000);
+  refreshDailyQuests();
+  updateUI();
+  updateBjLimits();
+  setInterval(saveGame, 15000); // auto-save every 15s
+};
+
+function saveGame() {
+  player.lastShopTime = Date.now()-((300-shopTimeRemaining)*1000);
+  localStorage.setItem('fc_save_v2', JSON.stringify(player));
+}
+
+function loadGame() {
+  let saved = localStorage.getItem('fc_save_v2');
+  if(saved) {
+    try {
+      let parsed = JSON.parse(saved);
+      // Deep merge stats & achievements
+      player = {...player,...parsed};
+      if(!player.stats) player.stats={totalCaught:0,raresCaught:0,heroicCaught:0,bjWins:0,bj21s:0,peakMoney:500,sellCount:0,earnedToday:0};
+      if(!player.achievements) player.achievements=[];
+      if(!player.quests) player.quests=[];
+      if(!player.questDate) player.questDate='';
+    } catch(e) { console.error('Save corrupted'); }
+  }
+}
+
+function resetSave() {
+  showModal(`<h3>Reset Progress?</h3><p style="margin-top:8px">This cannot be undone. All progress will be lost forever.</p><div class="modal-buttons"><button onclick="closeModal()">Cancel</button><button class="btn-danger" onclick="localStorage.removeItem('fc_save_v2');location.reload()">Reset Everything</button></div>`);
+}
+
+// ═══════════════════════════════════════════
+//  UI
+// ═══════════════════════════════════════════
+function toggleMenu() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('overlay-bg').style.display =
+    document.getElementById('sidebar').classList.contains('open') ? 'block' : 'none';
+}
+
+function switchView(v) {
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.getElementById(`view-${v}`).classList.add('active');
+  toggleMenu();
+  if(v==='inventory') renderInventory();
+  if(v==='shop') renderShop();
+  if(v==='achievements') renderAchievements();
+  if(v==='quests') renderQuests();
+}
+
+function updateUI() {
+  document.getElementById('ui-money').innerText=`💰 ₹${fmt(player.money)}`;
+  document.getElementById('ui-gems').innerText=`💎 ${player.gems}`;
+  document.getElementById('ui-rod').innerText=`Rod ${'I'.repeat(player.rodLevel)}`;
+  document.getElementById('ui-inv-count').innerText=`🎒 ${player.inv.length}/${player.maxInv}`;
+
+  player.level = Math.floor(Math.sqrt(player.exp/100))+1;
+  let nextExp = Math.pow(player.level,2)*100;
+  let curLvlExp = Math.pow(player.level-1,2)*100;
+  let pct = ((player.exp-curLvlExp)/(nextExp-curLvlExp))*100;
+  document.getElementById('ui-level').innerText=`Lvl ${player.level}`;
+  document.getElementById('xp-bar-fill').style.width=Math.min(100,pct)+'%';
+
+  if(player.money > player.stats.peakMoney) player.stats.peakMoney=player.money;
+  checkAchievements();
+}
+
+function fmt(n) {
+  if(n>=1000000) return (n/1000000).toFixed(2)+'M';
+  if(n>=1000) return (n/1000).toFixed(1)+'k';
+  return n.toLocaleString();
+}
+
+function toast(msg, type='') {
+  let el=document.createElement('div');
+  el.className=`toast ${type?'toast-'+type:''}`;
+  el.innerHTML=msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(()=>el.remove(),3100);
+}
+
+// ═══════════════════════════════════════════
+//  INVENTORY
+// ═══════════════════════════════════════════
+function addItem(id) {
+  const d = ITEMS[id];
+  if(id==='gem') { player.gems++; updateUI(); saveGame(); return true; }
+  if(d.stackable) {
+    let ex = player.inv.find(i=>i.id===id);
+    if(ex) { ex.qty++; updateUI(); saveGame(); return true; }
+  }
+  if(player.inv.length>=player.maxInv) { pendingCaughtItem=id; showFullInvModal(id); return false; }
+  player.inv.push({id,qty:1,uid:Math.random().toString(36).substr(2,9)});
+  updateUI(); saveGame(); return true;
+}
+
+function removeItem(id,qty=1,uid=null) {
+  if(uid) { let i=player.inv.findIndex(x=>x.uid===uid); if(i>-1) player.inv.splice(i,1); }
+  else {
+    let ex=player.inv.find(x=>x.id===id);
+    if(ex){ ex.qty-=qty; if(ex.qty<=0) player.inv=player.inv.filter(x=>x!==ex); }
+  }
+  updateUI();
+  if(document.getElementById('view-inventory').classList.contains('active')) renderInventory();
+}
+
+function hasItem(id){ return player.inv.some(i=>i.id===id); }
+function getInvQty(id){ let c=0; player.inv.forEach(i=>{if(i.id===id)c+=i.qty;}); return c; }
+
+function equipRod(id,uid,lvl) {
+  if(player.rodLevel>=lvl){ toast('You have a better rod equipped!','red'); return; }
+  player.rodLevel=lvl; removeItem(id,1,uid); buildDeck();
+  toast(`Equipped ${ITEMS[id].name}! 🎣`,'gold'); updateUI();
+}
+
+function upgradeInvCash(){
+  if(player.money>=1000000){player.money-=1000000;player.maxInv+=10;toast('+10 Inventory Slots!','green');updateUI();}
+  else toast('Need ₹1,000,000!','red');
+}
+function upgradeInvGems(){
+  if(player.gems>=3){player.gems-=3;player.maxInv+=10;toast('+10 Inventory Slots!','green');updateUI();}
+  else toast('Need 3 💎!','red');
+}
+function cashGem(){
+  if(player.gems>=1){player.gems-=1;player.money+=250000;toast('Cashed 1 💎 → ₹250,000','gold');updateUI();}
+  else toast('No gems!','red');
+}
+function upgradeShopGems(){
+  if(player.gems>=10){player.gems-=10;player.shopSlots++;toast('+1 Shop Slot!','gold');generateShop();updateUI();}
+  else toast('Need 10 💎!','red');
+}
+
+function quickSellFromInv(id,uid,qty) {
+  let p=Math.floor(ITEMS[id].basePrice*0.7)*qty;
+  player.money+=p;
+  player.stats.sellCount+=qty;
+  trackQuestProgress('sell',qty);
+  trackQuestProgress('earn',p);
+  removeItem(id,qty,uid);
+  toast(`Sold for ₹${fmt(p)}`,'gold');
+  checkAchievements();
+}
+
+function renderInventory() {
+  const grid=document.getElementById('inv-grid');
+  grid.innerHTML='';
+  if(player.inv.length===0){grid.innerHTML=`<p style="color:var(--text2);font-family:'IM Fell English',serif;font-style:italic;">Your inventory is empty. Go catch something!</p>`;return;}
+  player.inv.forEach(i=>{
+    let d=ITEMS[i.id];
+    let div=document.createElement('div');
+    div.className=`inv-item rarity-${d.rarity}`;
+    let actionHtml='';
+    if(d.type==='rod'){
+      let rLvl=i.id==='rod_2'?2:3;
+      if(player.rodLevel<rLvl) actionHtml+=`<button class="btn-gold" onclick="equipRod('${i.id}','${i.uid}',${rLvl})" style="margin-bottom:5px">Equip</button>`;
+    }
+    div.innerHTML=`
+      <div>
+        <div class="emoji">${d.emoji}</div>
+        ${d.stackable?`<div class="qty">×${i.qty}</div>`:''}
+        <div class="item-name">${d.name}</div>
+        <div class="item-rarity rarity-label-${d.rarity}">${d.rarity.charAt(0).toUpperCase()+d.rarity.slice(1)}</div>
+        ${d.desc?`<div style="font-size:10px;color:var(--teal);font-family:'IM Fell English',serif;font-style:italic;margin-bottom:4px">${d.desc}</div>`:''}
+      </div>
+      <div>${actionHtml}<button onclick="quickSellFromInv('${i.id}','${i.uid}',${i.qty})">Quick Sell (−30%)</button></div>`;
+    grid.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  MODALS
+// ═══════════════════════════════════════════
+function showModal(html){
+  document.getElementById('modal-content').innerHTML=html;
+  document.getElementById('modal-overlay').classList.add('show');
+}
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('show'); }
+
+function showFullInvModal(id){
+  let item=ITEMS[id];
+  let qs=Math.floor(item.basePrice*0.7);
+  showModal(`<h3>🎒 Inventory Full!</h3><p style="margin:12px 0">You caught <strong style="color:var(--gold)">${item.emoji} ${item.name}</strong> but have no space.</p>
+    <div class="modal-buttons">
+      <button onclick="handleInvFull('drop')" class="btn-danger">Drop It</button>
+      <button onclick="handleInvFull('sell',${qs})" class="btn-gold">Quick Sell (₹${fmt(qs)})</button>
+    </div>`);
+}
+
+function handleInvFull(action,price){
+  if(action==='sell'){player.money+=price;trackQuestProgress('earn',price);toast(`Quick sold for ₹${fmt(price)}`,'gold');updateUI();}
+  else toast('Item dropped.','red');
+  pendingCaughtItem=null; closeModal();
+}
+
+// ═══════════════════════════════════════════
+//  FISHING
+// ═══════════════════════════════════════════
+function buildDeck(){
+  fishingDeck=[];
+  let m=player.rodLevel===1?1:(player.rodLevel===2?1.3:1.7);
+  let adds={
+    'sardine':100,'salmon':Math.floor(50*m),'tuna':Math.floor(20*m),
+    'bronze_statue':Math.floor(5*m),'silver_coin':Math.floor(5*m),'old_boot':Math.floor(4*m),
+    'gold_ring':Math.floor(4*m),'emerald_pendant':Math.floor(3*m),'bj_book_1':Math.floor(2*m),
+    'diamond_goblet':Math.floor(3*m),'pirate_crown':Math.floor(1*m),'bj_book_2':Math.floor(1*m),
+    'bj_book_3':Math.floor(1*m),'lucky_charm':Math.floor(2*m),'fish_guide':Math.floor(3*m),
+    'ancient_relic':1,'dragon_scale':1,'gem':1,
+    'rod_2':Math.floor(2*m),'rod_3':Math.floor(1*m)
+  };
+  for(let[id,count] of Object.entries(adds)) if(count>0) for(let i=0;i<count;i++) fishingDeck.push(id);
+  for(let i=fishingDeck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[fishingDeck[i],fishingDeck[j]]=[fishingDeck[j],fishingDeck[i]];}
+}
+
+function drawFish(){ if(fishingDeck.length===0)buildDeck(); return fishingDeck.pop(); }
+
+function logFish(msg){ document.getElementById('fish-log').innerText=msg; }
+
+function touchPond(){ if(fishingState==='biting'||fishingState==='waiting') pullRod(); }
+
+function castRod(){
+  if(fishingState!=='idle') return;
+  fishingState='waiting';
+  document.getElementById('btn-cast').style.display='none';
+  document.getElementById('btn-pull').style.display='inline-block';
+  logFish('Line in the water… waiting for a bite.');
+  let wait=Math.random()*3000+1500;
+  fishingTimeout=setTimeout(spawnTrail,wait);
+}
+
+function spawnTrail(){
+  if(fishingState!=='waiting') return;
+  let pond=document.getElementById('pond');
+  let particle=document.createElement('div');
+  particle.className='trail-particle';
+  let angle=Math.random()*Math.PI*2;
+  let pW=pond.clientWidth, pH=pond.clientHeight;
+  let sx=(pW/2)+Math.cos(angle)*Math.min(pW,pH)*0.45;
+  let sy=(pH/2)+Math.sin(angle)*pH*0.35;
+  particle.style.left=sx+'px'; particle.style.top=sy+'px';
+  pond.appendChild(particle);
+  particle.animate([{left:sx+'px',top:sy+'px'},{left:'50%',top:'50%'}],{duration:1200,easing:'ease-in'});
+  setTimeout(()=>{ particle.remove(); if(fishingState==='waiting') triggerBite(); },1200);
+}
+
+function triggerBite(){
+  fishingState='biting';
+  document.getElementById('bobber').classList.add('splash');
+  logFish('🎣 BITE! Pull now!');
+  biteTimeout=setTimeout(()=>{
+    if(fishingState==='biting'){
+      fishingState='idle';
+      document.getElementById('bobber').classList.remove('splash');
+      resetFishBtns(); logFish('The fish got away… try again.');
+    }
+  },900);
+}
+
+function pullRod(){
+  if(fishingState==='waiting'){
+    clearTimeout(fishingTimeout); fishingState='idle'; resetFishBtns(); logFish('Too early! The fish are watching.');
+  } else if(fishingState==='biting'){
+    clearTimeout(biteTimeout); fishingState='idle';
+    document.getElementById('bobber').classList.remove('splash');
+    resetFishBtns(); catchFish();
+  }
+}
+
+function resetFishBtns(){
+  document.getElementById('btn-cast').style.display='inline-block';
+  document.getElementById('btn-pull').style.display='none';
+}
+
+function catchFish(){
+  let id=drawFish();
+  let item=ITEMS[id];
+  let xpBonus = hasItem('lucky_charm') ? 1.05 : 1;
+  let xpGain = Math.floor(item.exp * xpBonus);
+  let added=addItem(id);
+  if(!added) return;
+
+  // Stats
+  player.stats.totalCaught++;
+  if(['rare','epic','legendary','heroic'].includes(item.rarity)) player.stats.raresCaught++;
+  if(item.rarity==='heroic') player.stats.heroicCaught++;
+  player.exp+=xpGain;
+
+  // Quest tracking
+  trackQuestProgress('catch',1);
+  if(['rare','epic','legendary','heroic'].includes(item.rarity)) trackQuestProgress('rare',1);
+
+  // Toast based on rarity
+  let toastType = item.rarity==='heroic'?'heroic':item.rarity==='legendary'?'legendary':item.rarity==='epic'?'epic':'';
+  if(toastType) toast(`${item.emoji} ${item.name} caught! (+${xpGain} XP)`,toastType);
+
+  // Show guide info if owned
+  let guideHint = hasItem('fish_guide') ? ` [${item.rarity}]` : '';
+  logFish(`Caught ${item.emoji} ${item.name}${guideHint}! (+${xpGain} XP)`);
+
+  updateUI();
+  checkAchievements();
+}
+
+// ═══════════════════════════════════════════
+//  SHOP
+// ═══════════════════════════════════════════
+function updateShopTimer(){
+  shopTimeRemaining--;
+  if(shopTimeRemaining<=0){ shopTimeRemaining=300; generateShop(); }
+  let m=Math.floor(shopTimeRemaining/60).toString().padStart(2,'0');
+  let s=(shopTimeRemaining%60).toString().padStart(2,'0');
+  document.getElementById('shop-timer').innerText=`${m}:${s}`;
+}
+
+function generateShop(){
+  player.shopInventory=[];
+  player.shopInventory.push(createShopSlot('sardine',rand(10,15),100,'sell'));
+  player.shopInventory.push(createShopSlot('salmon',rand(50,70),70,'sell'));
+  player.shopInventory.push(createShopSlot('tuna',rand(150,250),50,'sell'));
+  let pool=Object.keys(ITEMS).filter(k=>!['sardine','salmon','tuna','gem'].includes(k));
+  for(let i=3;i<player.shopSlots;i++){
+    if(Math.random()<0.3){
+      let buyPool=['rod_2','rod_3','bj_book_1','bj_book_2','bj_book_3','lucky_charm','fish_guide'];
+      let id=buyPool[Math.floor(Math.random()*buyPool.length)];
+      player.shopInventory.push(createShopSlot(id,Math.floor(ITEMS[id].basePrice*randFloat(0.9,1.2)),1,'buy'));
+    } else {
+      let id=pool[Math.floor(Math.random()*pool.length)];
+      player.shopInventory.push(createShopSlot(id,Math.floor(ITEMS[id].basePrice*randFloat(0.8,1.3)),rand(1,5),'sell'));
+    }
+  }
+  saveGame();
+  if(document.getElementById('view-shop').classList.contains('active')) renderShop();
+}
+
+function createShopSlot(id,price,limit,actionType){ return {id,price,limit,sold:0,actionType}; }
+
+function renderShop(){
+  let grid=document.getElementById('shop-grid');
+  grid.innerHTML='';
+  player.shopInventory.forEach((slot,index)=>{
+    let item=ITEMS[slot.id];
+    let rem=slot.limit-slot.sold;
+    let div=document.createElement('div');
+    div.className=`shop-slot rarity-${item.rarity}`;
+    if(slot.actionType==='sell'){
+      let pQ=getInvQty(slot.id);
+      div.innerHTML=`
+        <div>
+          <span class="shop-tag buying">Buying</span>
+          <div class="shop-emoji">${item.emoji}</div>
+          <div class="shop-name">${item.name}</div>
+          <div class="shop-price">₹${fmt(slot.price)} each</div>
+          <div class="shop-limit">Limit: ${rem} | You: ${pQ}</div>
+        </div>
+        <div class="shop-slot-actions">
+          <button ${rem<=0||pQ<=0?'disabled':''} onclick="shopTransact(${index},1)">Sell 1</button>
+          <button ${rem<=0||pQ<=0?'disabled':''} onclick="shopTransact(${index},${Math.min(rem,pQ)})">Sell Max</button>
+        </div>`;
+    } else {
+      div.innerHTML=`
+        <div>
+          <span class="shop-tag selling">For Sale</span>
+          <div class="shop-emoji">${item.emoji}</div>
+          <div class="shop-name">${item.name}</div>
+          ${item.desc?`<div style="font-size:11px;color:var(--teal);font-family:'IM Fell English',serif;font-style:italic;margin:4px 0">${item.desc}</div>`:''}
+          <div class="shop-price">₹${fmt(slot.price)}</div>
+          <div class="shop-limit">In stock: ${rem}</div>
+        </div>
+        <div class="shop-slot-actions">
+          <button ${rem<=0||player.money<slot.price?'disabled':''} class="btn-gold" onclick="shopTransact(${index},1)">Buy</button>
+        </div>`;
+    }
+    grid.appendChild(div);
+  });
+}
+
+function shopTransact(index,qty){
+  let slot=player.shopInventory[index];
+  if(slot.actionType==='sell'){
+    if(getInvQty(slot.id)>=qty&&(slot.limit-slot.sold)>=qty){
+      removeItem(slot.id,qty);
+      let earned=slot.price*qty;
+      player.money+=earned;
+      player.stats.sellCount+=qty;
+      trackQuestProgress('sell',qty);
+      trackQuestProgress('earn',earned);
+      toast(`Sold ${qty}× ${ITEMS[slot.id].emoji} for ₹${fmt(earned)}`,'gold');
+      slot.sold+=qty;
+    } else toast("Can't sell that much.",'red');
+  } else {
+    if(player.money>=slot.price*qty&&(slot.limit-slot.sold)>=qty){
+      if(addItem(slot.id)){player.money-=slot.price*qty;slot.sold+=qty;toast(`Purchased ${ITEMS[slot.id].emoji} ${ITEMS[slot.id].name}`,'green');}
+    } else toast("Can't afford that.",'red');
+  }
+  updateUI(); renderShop(); checkAchievements();
+}
+
+// ═══════════════════════════════════════════
+//  BLACKJACK
+// ═══════════════════════════════════════════
+function updateBjLimits(){
+  let mode=document.getElementById('bj-mode').value;
+  const limits=[[10,1000],[1000,10000],[10000,100000],[100000,1000000],[1000000,10000000]];
+  [bjMinBet,bjMaxBet]=limits[mode-1];
+  document.getElementById('bj-bet').placeholder=`₹${fmt(bjMinBet)} – ₹${fmt(bjMaxBet)}`;
+}
+
+function buildBjDeck(){
+  bjDeck=[];
+  const suits=['♠','♥','♦','♣'],vals=['2','3','4','5','6','7','8','9','10','J','Q','K','A'];
+  for(let d=0;d<6;d++) for(let s of suits) for(let v of vals){
+    let w=parseInt(v)||(['J','Q','K'].includes(v)?10:11);
+    bjDeck.push({suit:s,value:v,weight:w});
+  }
+  for(let i=bjDeck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bjDeck[i],bjDeck[j]]=[bjDeck[j],bjDeck[i]];}
+}
+
+function drawCard(){ if(bjDeck.length<20)buildBjDeck(); return bjDeck.pop(); }
+
+function getScore(cards){
+  let score=0,aces=0;
+  for(let c of cards){score+=c.weight;if(c.value==='A')aces++;}
+  while(score>21&&aces>0){score-=10;aces--;}
+  return score;
+}
+
+function startBjRound(){
+  if(bjState==='playing') return;
+  let bet=parseInt(document.getElementById('bj-bet').value);
+  if(isNaN(bet)||bet<bjMinBet||bet>bjMaxBet){setBjMsg(`Bet must be ₹${fmt(bjMinBet)}–₹${fmt(bjMaxBet)}`);return;}
+  if(player.money<bet){setBjMsg('Not enough gold!');return;}
+  player.money-=bet; updateUI();
+  buildBjDeck();
+  bjDealer.cards=[drawCard(),drawCard()];
+  bjHands=[{cards:[drawCard(),drawCard()],bet,status:'active'}];
+  currentHandIndex=0; bjState='playing'; bjInsuranceTaken=false;
+  document.getElementById('btn-bj-deal').style.display='none';
+  document.getElementById('bj-controls').style.display='flex';
+  hideBj21Banner();
+  setBjMsg('Cards dealt. Good luck!');
+  renderBjTable();
+  // Insurance button
+  let ins=document.getElementById('btn-bj-insurance');
+  if(bjDealer.cards[0].value==='A'&&(hasItem('bj_book_1')||player.money>=Math.floor(bet/2))){
+    ins.style.display='inline-block';
+    ins.innerText=hasItem('bj_book_1')?'🛡️ Free Insurance':'🛡️ Insurance';
+  } else ins.style.display='none';
+  checkBlackjack();
+}
+
+function setBjMsg(msg){ document.getElementById('bj-msg').innerHTML=msg; }
+function showBj21Banner(){ let b=document.getElementById('bj-21-banner');b.classList.add('show');setTimeout(()=>b.classList.remove('show'),2200); }
+function hideBj21Banner(){ document.getElementById('bj-21-banner').classList.remove('show'); }
+
+function applyWin(betAmount,mult,prefix){
+  let total=Math.floor(betAmount*mult);
+  let profit=total-betAmount;
+  let xp=Math.max(1,Math.floor(profit/10));
+  player.money+=total; player.exp+=xp;
+  player.stats.bjWins++;
+  trackQuestProgress('bjwin',1);
+  trackQuestProgress('earn',profit);
+  return `${prefix} (₹${fmt(total)}) <span style="color:#6ddc9a">[+${xp} XP]</span>`;
+}
+
+function checkBlackjack(){
+  let pScore=getScore(bjHands[0].cards);
+  let dScore=getScore(bjDealer.cards);
+  let pBJ=pScore===21&&bjHands[0].cards.length===2;
+  let dBJ=dScore===21&&bjDealer.cards.length===2;
+  if(pBJ||dBJ){
+    bjState='gameOver'; renderBjTable();
+    if(pBJ&&dBJ){ setBjMsg("Push — both have Blackjack!"); player.money+=bjHands[0].bet; }
+    else if(pBJ){
+      let mult=hasItem('bj_book_2')?3:2.5;
+      setBjMsg(applyWin(bjHands[0].bet,mult,'🃏 Blackjack!'));
+      showBj21Banner();
+    } else {
+      if(bjInsuranceTaken||hasItem('bj_book_1')){ setBjMsg("Dealer Blackjack — Insurance saves your bet!"); player.money+=bjHands[0].bet; }
+      else setBjMsg("Dealer has Blackjack. Better luck next hand.");
+    }
+    endBjRound();
+  }
+}
+
+function bjInsurance(){
+  let hand=bjHands[0];
+  let cost=Math.floor(hand.bet/2);
+  if(hasItem('bj_book_1')){ bjInsuranceTaken=true; toast('Free Insurance applied! 🛡️','gold'); }
+  else if(player.money>=cost){ player.money-=cost; bjInsuranceTaken=true; toast(`Insurance taken (₹${fmt(cost)})`,'gold'); updateUI(); }
+  else { toast("Can't afford insurance.",'red'); }
+  document.getElementById('btn-bj-insurance').style.display='none';
+}
+
+function renderBjTable(){
+  let dCardsHtml='', dScore='?';
+  if(bjState==='gameOver'||bjState==='dealerTurn'){
+    dScore=getScore(bjDealer.cards);
+    bjDealer.cards.forEach(c=>{
+      let col=(c.suit==='♥'||c.suit==='♦')?'red':'';
+      dCardsHtml+=`<div class="card ${col} deal-in">${c.value}<div class="card-suit">${c.suit}</div></div>`;
+    });
+  } else {
+    let c0=bjDealer.cards[0];
+    let col=(c0.suit==='♥'||c0.suit==='♦')?'red':'';
+    dCardsHtml+=`<div class="card ${col}">${c0.value}<div class="card-suit">${c0.suit}</div></div>`;
+    dCardsHtml+=`<div class="card hidden"></div>`;
+  }
+  document.getElementById('dealer-score').innerText=`Dealer: ${dScore}`;
+  document.getElementById('dealer-cards').innerHTML=dCardsHtml;
+
+  let pArea=document.getElementById('player-area');
+  pArea.innerHTML='';
+  bjHands.forEach((hand,i)=>{
+    let score=getScore(hand.cards);
+    let active=(i===currentHandIndex&&bjState==='playing')?'active-hand':'';
+    let html=`<div style="text-align:center" class="${active}">
+      <div class="hand-score">You: ${score} · Bet ₹${fmt(hand.bet)}</div>
+      <div class="cards-area" style="min-height:auto">`;
+    hand.cards.forEach(c=>{
+      let col=(c.suit==='♥'||c.suit==='♦')?'red':'';
+      html+=`<div class="card ${col} deal-in">${c.value}<div class="card-suit">${c.suit}</div></div>`;
+    });
+    html+=`</div></div>`;
+    pArea.innerHTML+=html;
+  });
+
+  if(bjState==='playing'){
+    let hand=bjHands[currentHandIndex];
+    document.getElementById('btn-bj-double').disabled=(hand.cards.length>2||player.money<hand.bet);
+    document.getElementById('btn-bj-split').disabled=!(hand.cards.length===2&&hand.cards[0].value===hand.cards[1].value&&bjHands.length===1&&player.money>=hand.bet);
+  }
+}
+
+function bjHit(){
+  let hand=bjHands[currentHandIndex];
+  hand.cards.push(drawCard());
+  let score=getScore(hand.cards);
+  if(score===21){
+    // 21 bonus!
+    show21Bonus(hand);
+    hand.status='stood'; nextHand();
+  } else if(score>21){
+    hand.status='busted'; nextHand();
+  } else renderBjTable();
+}
+
+function show21Bonus(hand){
+  showBj21Banner();
+  let bonus=Math.floor(hand.bet*(hasItem('bj_book_3')?0.5:0.25));
+  player.money+=bonus;
+  player.exp+=50;
+  player.stats.bj21s++;
+  trackQuestProgress('bj21',1);
+  toast(`🌟 21! Bonus ₹${fmt(bonus)} awarded!`,'legendary');
+}
+
+function bjStand(){ bjHands[currentHandIndex].status='stood'; nextHand(); }
+
+function bjDouble(){
+  let hand=bjHands[currentHandIndex];
+  player.money-=hand.bet; hand.bet*=2;
+  hand.cards.push(drawCard());
+  let score=getScore(hand.cards);
+  if(score===21){ show21Bonus(hand); hand.status='stood'; }
+  else hand.status=score>21?'busted':'stood';
+  updateUI(); nextHand();
+}
+
+function bjSplit(){
+  let hand=bjHands[currentHandIndex];
+  player.money-=hand.bet;
+  let newHand={cards:[hand.cards.pop()],bet:hand.bet,status:'active'};
+  hand.cards.push(drawCard()); newHand.cards.push(drawCard());
+  bjHands.push(newHand); updateUI(); renderBjTable();
+}
+
+function nextHand(){
+  currentHandIndex++;
+  if(currentHandIndex>=bjHands.length){ bjState='dealerTurn'; playDealer(); }
+  else renderBjTable();
+}
+
+function playDealer(){
+  renderBjTable();
+  let allBusted=bjHands.every(h=>h.status==='busted');
+  const draw=()=>{
+    if(!allBusted&&getScore(bjDealer.cards)<17){
+      bjDealer.cards.push(drawCard()); renderBjTable(); setTimeout(draw,500);
+    } else { bjState='gameOver'; resolveBjBets(); }
+  };
+  setTimeout(draw,600);
+}
+
+function resolveBjBets(){
+  let dScore=getScore(bjDealer.cards);
+  let msgs=[];
+  bjHands.forEach((hand,i)=>{
+    let pScore=getScore(hand.cards);
+    let pre=bjHands.length>1?`Hand ${i+1}: `:'';
+    if(hand.status==='busted') msgs.push(`${pre}Busted.`);
+    else if(dScore>21) msgs.push(applyWin(hand.bet,2,`${pre}Dealer busted! You win!`));
+    else if(pScore>dScore) msgs.push(applyWin(hand.bet,2,`${pre}You win!`));
+    else if(pScore===dScore){ msgs.push(`${pre}Push.`); player.money+=hand.bet; }
+    else msgs.push(`${pre}Dealer wins.`);
+  });
+  setBjMsg(msgs.join('<br>'));
+  renderBjTable(); endBjRound();
+  updateUI(); checkAchievements();
+}
+
+function endBjRound(){
+  updateUI(); saveGame();
+  document.getElementById('btn-bj-deal').style.display='inline-block';
+  document.getElementById('bj-controls').style.display='none';
+  document.getElementById('btn-bj-insurance').style.display='none';
+}
+
+// ═══════════════════════════════════════════
+//  ACHIEVEMENTS
+// ═══════════════════════════════════════════
+function checkAchievements(){
+  ACHIEVEMENTS.forEach(a=>{
+    if(!player.achievements.includes(a.id)&&a.req(player)){
+      player.achievements.push(a.id);
+      // Apply rewards
+      if(a.reward.startsWith('₹')){ player.money+=parseInt(a.reward.replace(/[₹,]/g,'')); }
+      else if(a.reward.includes('Gem')){ player.gems+=1; }
+      else if(a.reward.includes('Inv')){ player.maxInv+=10; }
+      toast(`🏆 Achievement: <strong>${a.name}</strong>! ${a.reward}`,'legendary');
+      updateUI(); saveGame();
+    }
+  });
+}
+
+function renderAchievements(){
+  let grid=document.getElementById('ach-grid');
+  grid.innerHTML='';
+  ACHIEVEMENTS.forEach(a=>{
+    let earned=player.achievements.includes(a.id);
+    let div=document.createElement('div');
+    div.className=`ach-card ${earned?'earned':''}`;
+    div.innerHTML=`
+      <div class="ach-icon" style="opacity:${earned?1:0.35}">${a.icon}</div>
+      <div>
+        <div class="ach-name">${a.name}</div>
+        <div class="ach-desc">${a.desc}</div>
+        <div class="ach-reward">${earned?'✓ '+a.reward:'Locked'}</div>
+      </div>`;
+    grid.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  DAILY QUESTS
+// ═══════════════════════════════════════════
+function refreshDailyQuests(){
+  let today=new Date().toDateString();
+  if(player.questDate!==today){
+    player.questDate=today;
+    // Pick 4 random quests
+    let pool=[...QUESTS_POOL];
+    pool.sort(()=>Math.random()-0.5);
+    player.quests=pool.slice(0,4).map(q=>({...q,progress:0,claimed:false}));
+    saveGame();
+  }
+}
+
+function trackQuestProgress(type,amount){
+  player.quests.forEach(q=>{
+    if(q.type===type&&!q.claimed){
+      q.progress=Math.min(q.target,q.progress+amount);
+      if(q.progress>=q.target&&!q.claimed){
+        toast(`📜 Quest Complete: <strong>${q.name}</strong>!`,'gold');
+      }
+    }
+  });
+  if(document.getElementById('view-quests').classList.contains('active')) renderQuests();
+}
+
+function claimQuest(index){
+  let q=player.quests[index];
+  if(q.progress<q.target||q.claimed) return;
+  q.claimed=true;
+  if(q.reward.money){ player.money+=q.reward.money; toast(`Claimed ₹${fmt(q.reward.money)}!`,'gold'); }
+  if(q.reward.gems){ player.gems+=q.reward.gems; toast(`Claimed ${q.reward.gems} 💎!`,'legendary'); }
+  updateUI(); renderQuests(); saveGame();
+}
+
+function renderQuests(){
+  let list=document.getElementById('quest-list');
+  list.innerHTML='';
+  player.quests.forEach((q,i)=>{
+    let pct=Math.min(100,(q.progress/q.target)*100);
+    let complete=q.progress>=q.target;
+    let reward=q.reward.money?`₹${fmt(q.reward.money)}`:q.reward.gems?`${q.reward.gems} 💎`:'';
+    let div=document.createElement('div');
+    div.className=`quest-card ${q.claimed?'done':''}`;
+    div.innerHTML=`
+      <div class="quest-info">
+        <div class="quest-name">${q.name}</div>
+        <div class="quest-desc">${q.desc}</div>
+        <div class="quest-prog"><div class="quest-prog-fill" style="width:${pct}%"></div></div>
+        <div style="font-size:11px;color:var(--text2);margin-top:4px">${q.progress}/${q.target}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+        <div class="quest-reward">${reward}</div>
+        ${!q.claimed&&complete?`<button class="btn-gold" onclick="claimQuest(${i})">Claim</button>`:''}
+        ${q.claimed?`<span style="color:var(--text2);font-size:12px">✓ Done</span>`:''}
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════════
+function rand(min,max){ return Math.floor(Math.random()*(max-min+1))+min; }
+function randFloat(min,max){ return Math.random()*(max-min)+min; }
+</script>
+</body>
+</html>
